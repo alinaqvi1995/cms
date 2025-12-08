@@ -7,7 +7,7 @@
             <a href="{{ url()->previous() }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
-            <h2 class="page-title mb-0">Edit Town</h2>
+            <h2 class="page-title mb-0">Edit User</h2>
         </div>
         <div class="card my-4">
             {{-- <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">

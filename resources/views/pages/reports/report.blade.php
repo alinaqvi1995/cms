@@ -77,7 +77,7 @@
                             style="width: 200px;">
                     </div>
                     <div class="col-7 text-end" style=" padding-top:2.4rem;">
-                        <h5 class=" fs-1">KW&SC-CRM</h5>
+                        <h5 class=" fs-1">NEW CRM</h5>
                         <p style="font-size: 1.2rem"><span class="bg-dark text-white">COMPLAINT TYPE REPORT</span></p>
                         <h5 style="font-size: 0.8rem">ISSUE DATE: {{ \Carbon\Carbon::now()->format('d F Y, h:i A') }}
                         </h5>
@@ -87,12 +87,6 @@
                             <b>From {{ \Carbon\Carbon::parse($dateS)->format('d F Y') }} to
                                 {{ \Carbon\Carbon::parse($dateE)->format('d F Y') }}</b>
                             <br />
-                            @if ($town != null)
-                                <b>Town : {{ $town->town }}</b>
-                            @endif
-                            @if ($subtown != null)
-                                <b>UC : {{ $subtown->title }}</b>
-                            @endif
                             @if ($type != null)
                                 <b>Complaint Type : {{ $type->title }}</b>
                             @endif

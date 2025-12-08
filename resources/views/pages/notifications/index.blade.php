@@ -68,8 +68,7 @@
                                                 <span class="badge bg-success">All Agents</span>
                                             @elseif($notification->recipient_type === 'agent')
                                                 <span class="badge bg-info">Specific Agent</span>
-                                            @elseif($notification->recipient_type === 'town')
-                                                <span class="badge bg-warning">Town Based</span>
+
                                             @elseif($notification->recipient_type === 'type')
                                                 <span class="badge bg-secondary">Type Based</span>
                                             @endif

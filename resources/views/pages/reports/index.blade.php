@@ -36,83 +36,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <form role="form" method="get" action="{{ route('compaints-reports.reports') }}"
-                                enctype="multipart/form-data">
-                                <div class="row">
-                                    <div class="form-group col-12">
-                                        <h6>Town Wise Reports</h6>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>From Date</label>
-                                        <input type="date" class="form-control border-bottom"
-                                            placeholder="Enter Customer Title..." name="from_date"
-                                            value="{{ old('title') }}" required />
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>To Date</label>
-                                        <input type="date" class="form-control border-bottom"
-                                            placeholder="Enter Customer Title..." name="to_date" value="{{ old('title') }}"
-                                            required />
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id"  class="select2 form-control fs-14  h-50px">
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <button type="submit" class="btn bg-primary text-white btn-lg ">Create</button>
-                                    </div>
-                                </div>
 
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <form role="form" method="get" action="{{ route('compaints-reports.reports') }}"
-                                enctype="multipart/form-data">
-                                <div class="row">
-                                    <div class="form-group col-12">
-                                        <h6>UC Wise Reports</h6>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>From Date</label>
-                                        <input type="date" class="form-control border-bottom"
-                                            placeholder="Enter Customer Title..." name="from_date"
-                                            value="{{ old('title') }}" required />
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>To Date</label>
-                                        <input type="date" class="form-control border-bottom"
-                                            placeholder="Enter Customer Title..." name="to_date"
-                                            value="{{ old('title') }}" required />
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>Select UC/Mohalla*</label>
-                                        <select name="sub_town_id"
-                                            class="select2 form-control fs-14  h-50px">
-                                            @foreach ($subtown as $row)
-                                                <option value="{{ $row->id }}">{{ $row->title }} </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <button type="submit" class="btn bg-primary text-white btn-lg ">Create</button>
-                                    </div>
-                                </div>
 
-                            </form>
-                        </div>
-                    </div>
-                </div>
                 <div class="col-md-3">
                     <div class="card shadow mb-4">
                         <div class="card-body">
@@ -324,16 +249,7 @@
                                             placeholder="Enter Customer Title..." name="to_date"
                                             value="{{ old('title') }}" required />
                                     </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id"  class="select2 form-control fs-14  h-50px">
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}
 
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                     <div class="form-group col-12">
                                         <label>Select Complaint Type</label>
                                         <select name="type_id"
@@ -407,16 +323,7 @@
                                             placeholder="Enter Customer Title..." name="to_date"
                                             value="{{ old('title') }}" required />
                                     </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id"  class="select2 form-control fs-14  h-50px">
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}
 
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                     <div class="form-group col-12">
                                         <label>Select Complaint Type</label>
                                         <select name="type_id"
@@ -489,14 +396,7 @@
                                             placeholder="Enter Customer Title..." name="to_date"
                                             value="{{ old('title') }}" required />
                                     </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id" class="select2 form-control fs-14  h-50px">
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+
                                     <div class="form-group col-12">
                                         <label>Select Complaint Type</label>
                                         <select name="type_id"
@@ -570,16 +470,7 @@
                                             placeholder="Enter Customer Title..." name="to_date"
                                             value="{{ old('title') }}" required />
                                     </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id"  class="select2 form-control fs-14  h-50px">
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}
 
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
                                     <div class="form-group col-12">
                                         <label>Select Complaint Type</label>
                                         <select name="type_id"
@@ -671,44 +562,7 @@
                 </div>
 
 
-                <div class="col-md-3">
-                    <div class="card shadow mb-4">
-                        <div class="card-body">
-                            <form role="form" method="get" action="{{ route('compaints-reports.reports12') }}"
-                                enctype="multipart/form-data">
-                                <div class="row">
-                                    <div class="form-group col-12">
-                                        <h6>Executive Engineer Performance Town Wise</h6>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>From Date</label>
-                                        <input type="date" class="form-control border-bottom"
-                                            placeholder="Enter Customer Title..." name="from_date"
-                                            value="{{ old('title') }}" required />
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>To Date</label>
-                                        <input type="date" class="form-control border-bottom"
-                                            placeholder="Enter Customer Title..." name="to_date"
-                                            value="{{ old('title') }}" required />
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id"  class="select2 form-control fs-14  h-50px">
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <button type="submit" class="btn bg-primary text-white btn-lg ">Create</button>
-                                    </div>
-                                </div>
 
-                            </form>
-                        </div>
-                    </div>
-                </div>
                 <div class="col-md-3">
                     <div class="card shadow mb-4">
                         <div class="card-body">
@@ -730,24 +584,7 @@
                                             placeholder="Enter Customer Title..." name="to_date"
                                             value="{{ old('title') }}" required />
                                     </div>
-                                    <div class="form-group col-12">
-                                        <label>Select Town*</label>
-                                        <select name="town_id" id="town-id" class=" form-control fs-14  h-50px">
-                                            <option disabled selected> -- Select Town --</option>
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-group col-12">
-                                        <label>Select SubTown*</label>
-                                        <select name="sub_town_id" id="sub_town_id" class="select2 form-control fs-14  h-50px" >
-                                            <option disabled selected> -- Select SubTown --</option>
-                                            @foreach ($subtown as $row)
-                                                <option value="{{ $row->id }}">{{ $row->title }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+
                                     <div class="form-group col-12">
                                         <label>Select Type*</label>
                                         <select name="type_id" id="type_id" class=" form-control fs-14  h-50px" >
@@ -830,22 +667,10 @@
                                             value="{{ old('to_date') }}" required />
                                     </div>
                                     <div class="form-group col-12">
-                                        <label>Select Town</label>
-                                        <select name="town_id" id="town-id-15" class="form-control fs-14 h-50px">
-                                            <option value="">All Towns</option>
-                                            @foreach ($town as $row)
-                                                <option value="{{ $row->id }}">{{ $row->town }}</option>
-                                            @endforeach
-                                        </select>
+
                                     </div>
                                     <div class="form-group col-12">
-                                        <label>Select SubTown</label>
-                                        <select name="sub_town_id" id="sub_town_id_15" class="form-control fs-14 h-50px">
-                                            <option value="">All SubTowns</option>
-                                            @foreach ($subtown as $row)
-                                                <option value="{{ $row->id }}">{{ $row->title }}</option>
-                                            @endforeach
-                                        </select>
+
                                     </div>
                                     <div class="form-group col-12">
                                         <label>Select Complaint Type</label>
@@ -936,31 +761,7 @@
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script>
-        $("#town-id").change( function() {
-            var town_id = $(this).val();
-            // console.log(town_id);
-            $.ajax({
-                type: "get",
-                url: "{{ route('subtown.by.town') }}",
-                data: {
-                    'town_id': town_id,
-                },
-                success: function(data) {
-                    $("#sub_town_id").html("");
-                    var your_html = "";
-                    your_html += "<option disabled selected> -- Select SubTown --</option>";
-                    $.each(data, function(key, val) {
-                        console.log(val);
-                        your_html += "<option value=" + val['id'] + ">" + val['title'] +
-                            "</option>"
-                    });
-                    $("#sub_town_id").append(your_html); //// For Append
-                },
-                error: function() {
-                    console.log(data);
-                }
-            });
-        });
+
         $("#type_id").on("change", function() {
             var type_id = $(this).val();
             $.ajax({
@@ -985,28 +786,7 @@
                 }
             });
         });
-        $("#town-id-15").change(function() {
-        var town_id = $(this).val();
-        $.ajax({
-            type: "get",
-            url: "{{ route('subtown.by.town') }}",
-            data: {
-                'town_id': town_id,
-            },
-            success: function(data) {
-                $("#sub_town_id_15").html("");
-                var your_html = "";
-                your_html += "<option value=''>All SubTowns</option>";
-                $.each(data, function(key, val) {
-                    your_html += "<option value=" + val['id'] + ">" + val['title'] + "</option>"
-                });
-                $("#sub_town_id_15").append(your_html);
-            },
-            error: function() {
-                console.log("Error fetching subtowns");
-            }
-        });
-    });
+
 
     $("#type_id_15").on("change", function() {
         var type_id = $(this).val();

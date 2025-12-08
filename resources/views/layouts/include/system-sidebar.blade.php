@@ -57,18 +57,11 @@
                         <a class="nav-link" href="{{ url('system/source-management') }}"><span class="ml-1 item-text">Source Management</span>
                         </a>
                     </li>
-                    <li class="nav-item @if (Route::is('town-management.index')) active @endif">
-                        <a class="nav-link" href="{{ url('system/town-management') }}"><span class="ml-1 item-text">Town Management</span>
-                        </a>
-                    </li>
                     <li class="nav-item @if (Route::is('districts.index')) active @endif">
                         <a class="nav-link" href="{{ url('system/districts') }}"><span class="ml-1 item-text">District Management</span>
                         </a>
                     </li>
-                    <li class="nav-item @if (Route::is('subtown-management.index')) active @endif">
-                        <a class="nav-link" href="{{ url('system/subtown-management') }}"><span class="ml-1 item-text">SubTown Management</span>
-                        </a>
-                    </li>
+
                 </ul>
             </li>
             <li class="nav-item dropdown">

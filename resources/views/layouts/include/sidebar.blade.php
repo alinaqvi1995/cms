@@ -40,7 +40,7 @@
                                     class="ml-1 item-text">Dashboard</span></a>
                         </li>
                     @endcan
-                    @can('admin.reports')
+                    {{-- @can('admin.reports')
                         <li class="nav-item @if (Route::is('admin.reports')) active @endif">
                             <a class="nav-link " href="{{ route('admin.reports') }}"><span
                                     class="ml-1 item-text">Reports</span></a>
@@ -57,11 +57,11 @@
                             <a class="nav-link " href="{{ route('admin.notification.index') }}"><span
                                     class="ml-1 item-text">Notification Management</span></a>
                         </li>
-                    @endcan
+                    @endcan --}}
                 </ul>
             </li>
         </ul>
-        <p class="text-muted nav-heading mt-4 mb-2 pl-4">
+        {{-- <p class="text-muted nav-heading mt-4 mb-2 pl-4">
             <span>Components</span>
         </p>
         <ul class="navbar-nav flex-fill w-100 mb-2">
@@ -113,24 +113,10 @@
                             </a>
                         </li>
                     @endcan
-                    @can('town-management.index')
-                        <li class="nav-item @if (Route::is('town-management.index')) active @endif">
-                            <a class="nav-link" href="{{ url('admin/town-management') }}"><span class="ml-1 item-text">Town
-                                    Management</span>
-                            </a>
-                        </li>
-                    @endcan
                     @can('districts.index')
                         <li class="nav-item @if (Route::is('districts.index')) active @endif">
                             <a class="nav-link" href="{{ url('admin/districts') }}"><span class="ml-1 item-text">District
                                     Management</span>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('subtown-management.index')
-                        <li class="nav-item @if (Route::is('subtown-management.index')) active @endif">
-                            <a class="nav-link" href="{{ url('admin/subtown-management') }}"><span
-                                    class="ml-1 item-text">SubTown Management</span>
                             </a>
                         </li>
                     @endcan
@@ -140,7 +126,6 @@
                 <a href="#forms" data-toggle="collapse" aria-expanded="true" class="dropdown-toggle nav-link">
                     <i class="fe fe-layers fe-16"></i>
                     <span class="ml-3 item-text">Agents & Others</span>
-                    {{-- <span class="badge badge-pill badge-primary">New</span> --}}
                 </a>
 
                 <ul class="collapse list-unstyled w-100 show" id="forms">
@@ -209,7 +194,7 @@
                     @endcan
                 </ul>
             </li>
-        </ul>
+        </ul> --}}
     </nav>
 </aside>
 

@@ -84,15 +84,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-auto mr-auto">
                                         </div>
-                                        <div class="form-group col-auto">
-                                            <label for="search" class="sr-only">Town</label>
-                                            <select class="form-control select2" id="town-id">
-                                                <option value=""> ALL TOWNS</option>
-                                                @foreach ($town as $row)
-                                                    <option value="{{ $row->id }}"> {{ $row->town }} </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+
                                         <div class="form-group col-auto">
                                             <label for="search" class="sr-only">Complaint Type</label>
                                             <select class="form-control select2" id="type-id">
@@ -182,8 +174,7 @@
                                                         Consumer Number</th>
                                                     <th>
                                                         Consumer Name</th>
-                                                    <th>
-                                                        Town</th>
+
                                                     <th>
                                                         Complaint Type / Priority</th>
                                                     {{-- <th>
@@ -280,7 +271,7 @@
 
         <script>
             var search = null;
-            var town = null;
+
             var type = null;
             var type_ids = [];
             var change_status = null;
@@ -346,9 +337,7 @@
                 $("input").keyup(function() {
                     search = $(this).val();
                 });
-                $("#town-id").change(function() {
-                    town = $(this).val();
-                });
+
                 $("#type-id").change(function() {
                     type = $(this).val();
                     type_ids = [];
@@ -396,7 +385,7 @@
                 $("#reset-btn").click(function() {
                     // Reset all filter values
                     search = null;
-                    town = null;
+
                     type = null;
                     type_ids = [];
                     change_status = null;
@@ -409,7 +398,7 @@
                     
                     // Reset form fields
                     $("#search1").val('');
-                    $("#town-id").val('').trigger('change');
+
                     $("#type-id").val('').trigger('change');
                     $("#status-id").val('').trigger('change');
                     $("#comp-status-id").val('').trigger('change');
@@ -431,7 +420,7 @@
             function fetchDataOnClick(page) {
                 console.log("Fetching data on click with filters:", {
                     search: search,
-                    town: town,
+
                     type_id: type,
                     comp_type_id: type_ids,
                     status: change_status,
@@ -448,7 +437,7 @@
                 var ajaxData = {
                         type: 'ajax',
                         search: search,
-                        town: town,
+
                         type_id: type,
                         status: change_status,
                         comp_status: comp_status,
@@ -486,7 +475,7 @@
                 console.log("Fetching data with filters:", {
                     search: search,
                     status: change_status,
-                    town: town,
+
                     type_id: type,
                     comp_type_id: type_ids,
                     comp_status: comp_status,
@@ -502,7 +491,7 @@
                         type: 'ajax',
                         search: search,
                         status: change_status,
-                        town: town,
+
                         type_id: type,
                         comp_status: comp_status,
                         source: source,
@@ -558,10 +547,7 @@
                         html += '<p class="text-xs font-weight-bold mb-0">' + row.customer_name + '</p>';
                     }
                     html += '</td>';
-                    html += '<td class="w-20">';
-                    html += '<p class="text-xs font-weight-bold mb-0">' + row.town.town + ' (' + (row.subtown ? row
-                        .subtown.title : '') + ')</p>';
-                    html += '</td>';
+
                     html += '<td>';
                     html += '<p class="text-xs font-weight-bold mb-0">' + (row.type ? row.type.title : '') + '</p>';
                     html += '<p class="text-xs font-weight-bold mb-0">' + (row.prio ? row.prio.title : '') + '</p>';

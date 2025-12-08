@@ -29,11 +29,7 @@
                                                     <span class="text-danger">{{ $message }}</span>
                                                 @enderror
                                             </div>
-                                            {{-- <div class="form-group col-12 p-3">
-                                                <label>Sub Town*</label>
-                                                <input type="text" class="form-control border-bottom border-1 border-dark"
-                                                placeholder="Enter Sub Town Here..." name="subtown" required  value="{{ old('subtown') }}"/>
-                                            </div> --}}
+
                                             <div class="text-right">
                                                 <button type="submit" class="btn btn-primary">Create</button>
                                                 <a href="{{ route('districts.index') }}" class="btn btn-secondary">Cancel</a>

@@ -18,7 +18,7 @@
                             <thead>
                                 <tr>
                                     <th>Source</th>
-                                    {{-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Sub Town</th> --}}
+
                                     {{-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Total Trucks</th> --}}
                                     <th>Actions</th>
                                 </tr>
@@ -30,9 +30,7 @@
                                         <td>
                                             <p class="text-xs font-weight-bold mb-0">{{ $row->title }}</p>
                                         </td>
-                                        {{-- <td class="align-middle text-center text-sm">
-                                          <p class="text-xs text-secondary mb-0">{{ $row->subtown }}</p>
-                                      </td> --}}
+
                                         <td>
                                             @if (auth()->user()->role == 1)
                                                 <a href="{{ url('admin/source-management/' . $row->id . '/edit') }}"

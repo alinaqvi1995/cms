@@ -67,28 +67,6 @@
                                     <h6 class="text-primary">Complaint Information</h6>
                                 </div>
                                 <div class="form-group col-md-6 p-3">
-                                    <label>Select Town*</label>
-                                    <select name="town_id" id="town_id" class="select2-multiple form-control fs-14 h-50px" required>
-                                        <option value="">-- Select Town --</option>
-                                        @foreach ($town as $row)
-                                            <option value="{{ $row->id }}"
-                                                @if ($row->id == $complaint->town_id) selected @endif>{{ $row->town }}
-                                                ({{ $row->subtown }})</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="form-group col-md-6 p-3">
-                                    <label>Select SubTown*</label>
-                                    <select name="sub_town_id" id="sub_town_id" class="select2-multiple form-control fs-14 h-50px" required>
-                                        <option value="">-- Select SubTown --</option>
-                                        @foreach ($subtown as $row)
-                                            <option value="{{ $row->id }}"
-                                                @if ($row->id == $complaint->sub_town_id) selected @endif>({{ $row->town->town }})
-                                                {{ $row->title }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="form-group col-md-6 p-3">
                                     <label>Select Type*</label>
                                     <select name="type_id" id="type_id" class="select2-multiple form-control fs-14 h-50px" required>
                                         <option value="">-- Select Type --</option>
@@ -168,29 +146,6 @@
             }
         });
 
-        $("#town_id").on("change", function() {
-            var town_id = $(this).val();
-            if (town_id) {
-                $.ajax({
-                    type: "get",
-                    url: "{{ route('subtown.by.town') }}",
-                    data: {
-                        'town_id': town_id,
-                    },
-                    success: function(data) {
-                        $("#sub_town_id").html('<option value="">-- Select SubTown --</option>');
-                        $.each(data, function(key, val) {
-                            $("#sub_town_id").append('<option value="' + val['id'] + '">' + val['title'] + '</option>');
-                        });
-                    },
-                    error: function() {
-                        console.log('Error loading subtowns');
-                    }
-                });
-            } else {
-                $("#sub_town_id").html('<option value="">-- Select SubTown --</option>');
-            }
-        });
 
         $("#type_id").on("change", function() {
             var type_id = $(this).val();

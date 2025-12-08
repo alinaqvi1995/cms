@@ -189,7 +189,7 @@
                     <div class="col-md-9 pt-3">
                         <h5 class="text-white" style="font-size: 1.8rem; margin-bottom:0% !important;">COMPLAINT REDRESSAL MECHANISM
                         </h5>
-                        <span class="text-white" style="font-size: 0.8rem">KW&SC |
+                        <span class="text-white" style="font-size: 0.8rem">NEW CRM |
                             {{ \Carbon\Carbon::now()->format('d F Y') }}</span>
                     </div>
                     {{-- <div class="col-md-3 pt-3">
@@ -212,7 +212,7 @@
                     <div class="w-80 pt-3 pl-2">
                         <h5 class="mobile-heading text-white">COMPLAINT REDRESSAL MECHANISM
                             <br />
-                            <span style="font-size: 0.6rem">KW&SC |
+                            <span style="font-size: 0.6rem">NEW CRM |
                                 {{ \Carbon\Carbon::now()->format('d F Y') }}</span>
                         </h5>
                     </div>

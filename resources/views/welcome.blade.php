@@ -170,7 +170,7 @@
                     <div class="col-md-6 pt-3">
                         <h5 class="fs-1 text-white">COMPLAINT REDRESSAL MECHANISM
                             <br />
-                            <span style="font-size: 0.8rem">KW&SC |
+                            <span style="font-size: 0.8rem">NEW CRM |
                                 {{ \Carbon\Carbon::now()->format('d F Y') }}</span>
                         </h5>
                     </div>
@@ -194,7 +194,7 @@
                     <div class="w-80 pt-3 pl-2">
                         <h5 class="mobile-heading text-white">COMPLAINT REDRESSAL MECHANISM
                             <br />
-                            <span style="font-size: 0.6rem">KW&SC |
+                            <span style="font-size: 0.6rem">NEW CRM |
                                 {{ \Carbon\Carbon::now()->format('d F Y') }}</span>
                         </h5>
                     </div>
@@ -279,16 +279,7 @@
                                                     <input type="text" class="form-control border-bottom border-1 border-dark"
                                                         value="@if ($customer != null){{ $customer->customer_name }}@endif" disabled />
                                                 </div>
-                                                <div class="form-group col-md-3 p-3">
-                                                    <label>Town<span class="item-required">*</span></label>
-                                                    <input type="text" class="form-control border-bottom border-1 border-dark"
-                                                        value="@if ($customer != null){{ $customer->town }}@endif" disabled />
-                                                </div>
-                                                <div class="form-group col-md-3 p-3">
-                                                    <label>Sub Town<span class="item-required">*</span></label>
-                                                    <input type="text" class="form-control border-bottom border-1 border-dark"
-                                                        value="@if ($customer != null){{ $customer->sub_town }}@endif" disabled />
-                                                </div>
+
                                             </div>
                                         </div> --}}
 
@@ -332,29 +323,7 @@
                                                     pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" title="Enter a valid email address (e.g., user@example.com)"
                                                     value="{{ old('email') }}" />
                                             </div>
-                                            {{-- <div class="form-group col-md-3 p-3">
-                                                <label>Select Town<span class="item-required">*</span></label>
-                                                <select name="town_id" id="town_id"
-                                                    class="form-control select2 border-dark" required>
-                                                    <option selected disabled>-- Select Town --</option>
-                                                    @foreach ($town as $row)
-                                                        <option value="{{ $row->id }}">{{ $row->town }}
 
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @if ($customer != null)
-                                                    <input type="hidden" name="customer_id"
-                                                        value="@if (isset($customer->customer_id)) {{ $customer->id }} @endif" />
-                                                @endif
-                                            </div>
-                                            <div class="form-group col-md-3 p-3">
-                                                <label>Select UC / Mohalla<span class="item-required">*</span></label>
-                                                <select name="sub_town_id" id="sub_town_id"
-                                                    class="form-control select2 border-dark" required>
-                                                    <option selected disabled>-- Select UC / Mohalla --</option>
-                                                </select>
-                                            </div> --}}
                                             <div class="form-group col-md-3 p-3">
                                                 <label>Applicant Person Address</label>
                                                 <input type="text"
@@ -411,12 +380,7 @@
                                                     @endforeach
                                                 </select>
                                             </div> --}}
-                                            {{-- <div class="form-group col-md-3 p-3">
-                                                    <label>Title<span class="item-required">*</span></label>
-                                                    <input type="text" class="form-control border-bottom border-1 border-dark"
-                                                        placeholder="Enter Sub Town Here..." name="title" required
-                                                        value="{{ old('title') }}" />
-                                                </div> --}}
+
                                             <div class="form-group col-md-3 p-3">
                                                 <label>Description<span class="item-required">*</span> <span> (character limit 350)</span></label>
                                                 <textarea class="form-control border-bottom border-1 border-dark" placeholder="Enter Description Here..."
@@ -883,30 +847,7 @@
         }
     </script>
     <script>
-        $("#town_id").on("change", function() {
-            var town_id = $(this).val();
-            $.ajax({
-                type: "get",
-                url: "{{ route('subtown.by.town') }}",
-                data: {
-                    'town_id': town_id,
-                },
-                success: function(data) {
-                    $("#sub_town_id").html("");
-                    var your_html = "";
-                    your_html += "<option value='' selected disabled>-- Select UC / Mohalla --</option>";
-                    $.each(data, function(key, val) {
-                        console.log(val);
-                        your_html += "<option value=" + val['id'] + ">" + val['title'] +
-                            "</option>"
-                    });
-                    $("#sub_town_id").append(your_html); //// For Append
-                },
-                error: function() {
-                    console.log(data);
-                }
-            });
-        });
+
         $("#type_id").on("change", function() {
             var type_id = $(this).val();
             $.ajax({

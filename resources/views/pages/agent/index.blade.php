@@ -79,15 +79,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-auto mr-auto">
                                         </div>
-                                        <div class="form-group col-auto">
-                                            <label for="search" class="sr-only">Town</label>
-                                            <select class="form-control select2" id="town-id">
-                                                <option disabled selected> -- Select Town --</option>
-                                                @foreach ($towns as $row)
-                                                    <option value="{{ $row->id }}"> {{ $row->town }} </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+
                                         <div class="form-group col-auto">
                                             <label for="search" class="sr-only">Agent Type</label>
                                             <select class="form-control select2" id="type-id">
@@ -115,7 +107,7 @@
                                             <thead>
                                                 <tr>
                                                     <th>Agent</th>
-                                                    <th>Town</th>
+
                                                     <th>Type</th>
                                                     <th>Address</th>
                                                     <th>Description</th>
@@ -130,11 +122,7 @@
                                                                 <div class="skeleton-line" style="width: 100%;"></div>
                                                             </div>
                                                         </td>
-                                                        <td class="skeleton-item">
-                                                            <div class="skeleton-content">
-                                                                <div class="skeleton-line" style="width: 100%;"></div>
-                                                            </div>
-                                                        </td>
+
                                                         <td class="skeleton-item">
                                                             <div class="skeleton-content">
                                                                 <div class="skeleton-line" style="width: 100%;"></div>
@@ -180,7 +168,7 @@
 
         <script>
             var search = null;
-            var town = null;
+
             var type = null;
             fetchDataOnReady();
 
@@ -189,10 +177,7 @@
                     search = $(this).val();
                     fetchDataOnReady();
                 });
-                $("#town-id").change(function() {
-                    town = $(this).val();
-                    fetchDataOnReady();
-                });
+
                 $("#type-id").change(function() {
                     type = $(this).val();
                     fetchDataOnReady();
@@ -200,12 +185,12 @@
                 $("#reset-filters").click(function() {
                     // Reset variables
                     search = null;
-                    town = null;
+
                     type = null;
 
                     // Reset UI elements
                     $("#search1").val('');
-                    $("#town-id").val('').trigger('change');
+
                     $("#type-id").val('').trigger('change');
 
                     // Fetch data with reset filters
@@ -221,7 +206,7 @@
                     data: {
                         type: 'ajax',
                         search: search,
-                        town: town,
+
                         type_id: type,
                         page: page
                     },
@@ -243,7 +228,7 @@
                     data: {
                         type: 'ajax',
                         search: search,
-                        town: town,
+
                         type_id: type
                     },
                     success: function(response) {
@@ -269,16 +254,7 @@
                         html += '<img src="{{ asset('storage/') }}/' + row.avatar + '" class="img-fluid" style="width: 70px; height: 70px;" />';
                     }
                     html += '</td>';
-                    html += '<td class="w-20">';
-                    if (row.town) {
-                        html += '<p class="text-xs font-weight-bold mb-0">' + row.town.town + '</p>';
-                        if (row.town.subtown) {
-                            html += '<p class="text-xs text-secondary mb-0">' + row.town.subtown + '</p>';
-                        }
-                    } else {
-                        html += '<p class="text-xs text-secondary mb-0">N/A</p>';
-                    }
-                    html += '</td>';
+
                     html += '<td class="w-20">';
                     html += '<p class="text-xs font-weight-bold mb-0">' + (row.complaint_type ? row.complaint_type.title : 'Type is not defined...') + '</p>';
                     html += '</td>';

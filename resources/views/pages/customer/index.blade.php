@@ -47,7 +47,7 @@
                                 <tr>
                                     <th>Customer#</th>
                                     <th>Name / Phone</th>
-                                    <th>Town SubTown</th>
+
                                     <th>Address</th>
                                     {{-- <th class="text-center text-uppercase  text-xxs font-weight-bolder opacity-7">Total Trucks</th> --}}
                                     <th>Actions</th>
@@ -64,10 +64,7 @@
                                             <p class="text-xs  mb-0">{{ $row->customer_name }}</p>
                                             <p class="text-xs  mb-0">{{ $row->phone }}</p>
                                         </td>
-                                        <td class="align-middle text-center text-sm">
-                                            <p class="text-xs  mb-0">{{ $row->town }} -
-                                                {{ $row->sub_town }}</p>
-                                        </td>
+
                                         <td class="align-middle text-center text-sm">
                                             <p class="text-xs  mb-0">{{ $row->address }}</p>
                                         </td>
@@ -97,26 +94,23 @@
 
     <script>
         var search = null;
-        var town = null;
+
         
         $("input").keyup(function() {
             search = $(this).val();
             fetchDataOnReady();
         });
         
-        $("#town-filter").change(function() {
-            town = $(this).val();
-            fetchDataOnReady();
-        });
+
         
         $("#reset-filters").click(function(){
             // Reset all filter values
             search = null;
-            town = null;
+
             
             // Reset form fields
             $("#search1").val('');
-            $("#town-filter").val('').trigger('change');
+
             
             // Fetch data with reset filters
             fetchDataOnReady();
@@ -136,7 +130,7 @@
                 type: "GET",
                 data: {
                     search: search,
-                    town: town,
+
                     type: 'ajax',
                     page: page
                 },
@@ -160,7 +154,7 @@
                 data: {
                     type: 'ajax',
                     search: search,
-                    town: town
+
                 },
                 success: function(response) {
                     console.log("Data fetched successfully on document ready:", response);
@@ -187,9 +181,7 @@
                 html += '<p class="text-xs mb-0">' + row.customer_name + '</p>';
                 html += '<p class="text-xs mb-0">' + row.phone + '</p>';
                 html += '</td>';
-                html += '<td class="align-middle text-center text-sm">';
-                html += '<p class="text-xs mb-0">' + row.town + ' - ' + row.sub_town + '</p>';
-                html += '</td>';
+
                 html += '<td class="align-middle text-center text-sm">';
                 html += '<p class="text-xs mb-0">' + row.address + '</p>';
                 html += '</td>';

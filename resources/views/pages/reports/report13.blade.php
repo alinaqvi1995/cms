@@ -80,7 +80,7 @@
                     </div>
                     <div class="col-6 text-end" style="padding-top:2.4rem;">
                         <h2 class="mb-4">Complaint Management Center</h2>
-                        <p>Karachi Water & Sewerage Corporation
+                        <p>NEW CRM
                         </p>
 
                         <h5 style="font-size: 0.8rem">
@@ -141,7 +141,7 @@
                                 <thead>
                                     <tr style="background-color:#5b9bd5; color: #FFF !important;">
                                         <th><b>Executive Engineer</b></th>
-                                        <th><b>Town</b></th>
+
                                         <th><b>Sub-Type </b></th>
                                         <th><b>Total Recieved</b></th>
                                         <th><b>Resolved </b></th>
@@ -153,7 +153,7 @@
                                     @forelse($exen_complete_filter2 as $record)
                                         <tr>
                                             <td>{{ $record->Executive_Engineer }}</td>
-                                            <td>{{ $record->Town }}</td>
+
                                             <td>{{ $record->Complaint }}</td>
                                             <td>{{ $record->Total_Complaints }}</td>
                                             <td>{{ $record->Resolved }}</td>

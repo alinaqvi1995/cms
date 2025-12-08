@@ -128,7 +128,7 @@
                 <img src="{{ asset('assets/images/unnamed.png') }}" alt="Company Logo">
             </div>
             <div class="header-content">
-                <div class="report-title">KW&SC-CRM</div>
+                <div class="report-title">NEW CRM</div>
                 <div class="report-subtitle">Executive Engineer Performance Report</div>
                 <div class="report-date">ISSUE DATE: {{ \Carbon\Carbon::now()->format('d F Y, h:i A') }}</div>
             </div>
@@ -153,7 +153,7 @@
                 <thead>
                     <tr style="background-color:#5b9bd5; color: #FFF !important;">
                         <th class="text-white"><b>Executive Engineer</b></th>
-                        <th class="text-white"><b>Town</b></th>
+
                         <th class="text-white"><b>Department</b></th>
                         <th class="text-white"><b>Solved</b></th>
                         <th class="text-white"><b>Pending</b></th>
@@ -165,7 +165,7 @@
                     @forelse($exen_complete as $record)
                         <tr>
                             <td>{{ $record->Executive_Engineer }}</td>
-                            <td>{{ $record->Town }}</td>
+
                             <td>{{ $record->Department }}</td>
                             <td>{{ $record->Solved }}</td>
                             <td>{{ $record->Pending }}</td>

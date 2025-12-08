@@ -229,25 +229,6 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group mb-3">
-                                                <label class="form-control-label text-dark font-weight-bold">Select Town *</label>
-                                                <select name="town_id" id="town_id" class="form-control border rounded-3 px-3 py-2" required>
-                                                    <option disabled selected> -- Select Town Here -- </option>
-                                                    @foreach ($town as $row)
-                                                        <option value="{{ $row->id }}">{{ $row->town }}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-3">
-                                                <label class="form-control-label text-dark font-weight-bold">Select SubTown *</label>
-                                                <select name="sub_town_id" id="sub_town_id" class="form-control border rounded-3 px-3 py-2" required>
-                                                    <option disabled selected> -- Select Subtown Here -- </option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group mb-3">
                                                 <label class="form-control-label text-dark font-weight-bold">Select Type *</label>
                                                 <select name="type_id" id="type_id" class="form-control border rounded-3 px-3 py-2" required>
                                                     <option disabled selected> -- Select Type Here -- </option>
@@ -393,28 +374,6 @@
             });
         });
 
-        $("#town_id").on("change",function(){
-            var town_id = $(this).val();
-            $.ajax({
-                type: "get",
-                url: "{{ route('subtown.by.town') }}",
-                data: {
-                    'town_id':town_id,
-                },
-                success: function (data) {
-                    $("#sub_town_id").html("");
-                    var your_html = "";
-                        $.each(data, function (key, val) {
-                            console.log(val);
-                            your_html += "<option value="+val['id']+">" +  val['title'] + "</option>"
-                        });
-                    $("#sub_town_id").append(your_html);
-                },
-                error: function() {
-                    console.log(data);
-                }
-            });
-        });
         
         $("#type_id").on("change",function(){
             var type_id = $(this).val();

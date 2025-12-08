@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\MobileAgentController;
-use App\Http\Controllers\TownController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\PrioritiesController;
@@ -10,7 +9,6 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\SourceController;
-use App\Http\Controllers\SubTownController;
 use App\Http\Controllers\SubTypeController;
 use App\Http\Controllers\DistrictController;
 use App\Http\Controllers\AnnouncementController;
@@ -36,7 +34,8 @@ use App\Http\Controllers\BounceBackController;
 */
 
 Route::get('/', function () {
-    return view('tab');
+    // return view('tab');
+    return redirect()->route('home');
 })->name('web.home');
 Route::middleware(['auth'])->group(function () {
     Route::get('/home', [HomeController::class, 'redirect_page'])->name('auth.home');
@@ -47,7 +46,6 @@ Route::get('/add/new/connection', [FrontendController::class, 'create_connection
 Route::get('/generate/bill', [FrontendController::class, 'generate_bill'])->name('front.generate.bill');
 Route::get('/update/connection/data', [FrontendController::class, 'update_connection_request'])->name('update.home.connection');
 Route::post('/complaint/store', [FrontendController::class, 'store'])->name('front.compalaint.store');
-Route::get('/subtown/by/town', [SubTownController::class, 'get_subtown'])->name('subtown.by.town');
 Route::get('/subtype/by/type', [SubTypeController::class, 'get_subtype'])->name('subtype.by.type');
 
 Auth::routes();
@@ -75,8 +73,6 @@ Route::prefix('/admin')->group(function () {
         Route::get('/agent-management/details/{id}', [MobileAgentController::class, 'detail'])->name('agent-management.details');
         Route::get('/assign-complaints/{agentId}/{complaintId}', [ComplaintController::class, 'assign_complaint'])->name('complaints.assign');
         Route::get('/assign-complaint-department/{userId}/{complaintId}', [ComplaintController::class, 'assign_complaint_department'])->name('complaints.assign.department');
-        Route::resource('/town-management', TownController::class);
-        Route::resource('/subtown-management', SubTownController::class);
         Route::resource('/compaints-management', ComplaintController::class);
         Route::resource('/priorities-management', PrioritiesController::class);
         Route::resource('/subtype-management', SubTypeController::class);
@@ -144,8 +140,6 @@ Route::prefix('/admin')->group(function () {
 Route::prefix('/system')->group(function () {
     Route::middleware(['IsSystemUser'])->group(function () {
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-        Route::resource('/town-management', TownController::class);
-        Route::resource('/subtown-management', SubTownController::class);
         Route::resource('/compaints-management', ComplaintController::class);
         Route::resource('/compaints-type-management', ComplaintTypeController::class);
         Route::get('/compaints-reports/reports', [ComplaintController::class, 'generate_report'])->name('compaints-reports.reports');

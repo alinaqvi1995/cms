@@ -99,27 +99,7 @@
                             </a>
                         </li>
                     @endcan
-                    @can('town-management.index')
-                        <li class="nav-item @if (Route::is('town-management.index')) active @endif">
-                            <a class="nav-link" href="{{ url('admin/town-management') }}"><span class="ml-1 item-text">Town
-                                    Management</span>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('districts.index')
-                        <li class="nav-item @if (Route::is('districts.index')) active @endif">
-                            <a class="nav-link" href="{{ url('admin/districts') }}"><span class="ml-1 item-text">District
-                                    Management</span>
-                            </a>
-                        </li>
-                    @endcan
-                    @can('subtown-management.index')
-                        <li class="nav-item @if (Route::is('subtown-management.index')) active @endif">
-                            <a class="nav-link" href="{{ url('admin/subtown-management') }}"><span
-                                    class="ml-1 item-text">SubTown Management</span>
-                            </a>
-                        </li>
-                    @endcan
+
                 </ul>
             </li> --}}
             {{-- <li class="nav-item dropdown">

@@ -48,13 +48,7 @@
                                             {{ $complaint->customer_name }}
                                         @endif
                                     </h5>
-                                    <p class="text-muted mb-2">
-                                        <i class="fe fe-map-pin fe-14 mr-2"></i>
-                                        {{ $complaint->town->town ?? 'N/A' }}
-                                        @if($complaint->subtown)
-                                            - {{ $complaint->subtown->title }}
-                                        @endif
-                                    </p>
+
                                     <p class="text-muted mb-0">
                                         <i class="fe fe-tag fe-14 mr-2"></i>
                                         {{ $complaint->type->title ?? 'N/A' }}

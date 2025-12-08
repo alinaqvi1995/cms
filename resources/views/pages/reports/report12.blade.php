@@ -137,7 +137,7 @@
                 <img src="{{ asset('assets/images/unnamed.png') }}" alt="Company Logo">
             </div>
             <div class="header-content">
-                <div class="report-title">KW&SC-CRM</div>
+                <div class="report-title">NEW CRM</div>
                 <div class="report-subtitle">Executive Engineer Performance Report</div>
                 <div class="report-date">ISSUE DATE: {{ \Carbon\Carbon::now()->format('d F Y, h:i A') }}</div>
             </div>
@@ -153,7 +153,7 @@
         <!-- Report Details -->
         <div style="margin-bottom: 15px;">
             <p><strong>Report Duration:</strong> From {{ \Carbon\Carbon::parse($dateS)->format('d F Y') }} to {{ \Carbon\Carbon::parse($dateE)->format('d F Y') }}</p>
-             <p><strong>Report Type:</strong> Town Wise Report</p>
+
         </div>
 
         <!-- Data Table -->
@@ -162,7 +162,7 @@
                 <thead>
                     <tr style="background-color:#5b9bd5; color: #FFF !important;">
                         <th><b>Executive Engineer</b></th>
-                        <th><b>Town</b></th>
+
                         <th><b>Department</b></th>
                         <th><b>Solved</b></th>
                         <th><b>Pending</b></th>
@@ -174,7 +174,7 @@
                     @forelse($exen_complete_filter2 as $record)
                         <tr>
                             <td>{{ $record->Executive_Engineer }}</td>
-                            <td>{{ $record->Town }}</td>
+
                             <td>{{ $record->Department }}</td>
                             <td>{{ $record->Solved }}</td>
                             <td>{{ $record->Pending }}</td>

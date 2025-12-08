@@ -32,11 +32,7 @@
                                     <input type="text" class="form-control border-bottom border-1 border-dark"
                                     placeholder="Enter Title Here..." name="title" required  value="{{ old('title',$source->title) }}"/>
                                 </div>
-                                {{-- <div class="form-group col-12 p-3">
-                                    <label>Sub Town*</label>
-                                    <input type="text" class="form-control border-bottom border-1 border-dark"
-                                    placeholder="Enter Sub Town Here..." name="subtown" required  value="{{ old('subtown',$town->subtown) }}"/>
-                                </div> --}}
+
                                 <div class="form-group col-12 p-3 text-right">
                                     <button type="submit" class="btn btn-primary">Update</button>
                                     @if (auth()->user()->role == 1)

@@ -144,10 +144,10 @@
                                 <div class="col-12 col-lg-4">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <h2 class="mb-1 fw-bold text-dark">KW&SC</h2>
+                                            <h2 class="mb-1 fw-bold text-dark">NEW CRM</h2>
                                             <p class="text-muted mb-0">
                                                 <i class="fas fa-building me-1 text-dark"></i>
-                                                Karachi Water & Sewerage Corporation
+                                                NEW CRM
                                             </p>
                                         </div>
                                     </div>
@@ -175,8 +175,8 @@
                                 <div class="col-6 col-lg-2 text-center py-3">
                                     <div class="bg-light rounded-3 p-3 h-100">
                                         <p class="mb-1 small text-dark fw-bold">Resolved Complaints</p>
-                                        <span class="h2 fw-bold text-success">
-                                            {{ $tat_summary_complete[count($tat_summary_complete)-1]->TotalComplaints }}</span>
+                                        {{-- <span class="h2 fw-bold text-success">
+                                            {{ $tat_summary_complete[count($tat_summary_complete)-1]->TotalComplaints }}</span> --}}
                                     </div>
                                 </div>
                                 
@@ -327,7 +327,7 @@
                 </div> <!-- .row --> --}}
                 <hr />
                 <div class="row align-items-baseline">
-                        <div class="col-md-12 col-lg-6">
+                        {{-- <div class="col-md-12 col-lg-6">
                             <div class="card shadow eq-card p-3 mb-4">
                                 <div class="card-body mb-n3 ">
                                     <div class="row mt-1 align-items-center">
@@ -380,11 +380,11 @@
                                     </div>
                                 </div> <!-- .card-body -->
                             </div> <!-- .card -->
-                        </div> <!-- .col -->
+                        </div> --}} <!-- .col -->
                     </div> <!-- .row -->
                     <hr />
                     <div class="row align-items-baseline">
-                        <div class="col-md-12 col-lg-6">
+                        {{-- <div class="col-md-12 col-lg-6">
                             <div class="card shadow eq-card p-3 mb-4">
                                 <div class="card-body mb-n3 ">
                                     <div class="row mt-1 align-items-center">
@@ -437,7 +437,7 @@
                                     </div>
                                 </div> <!-- .card-body -->
                             </div> <!-- .card -->
-                        </div> <!-- .col -->
+                        </div> --}} <!-- .col -->
                     </div> <!-- .row -->
                     <hr />
 
@@ -446,7 +446,7 @@
         </div>
     </div>
 @endsection
-@section('bottom_script')
+{{-- @section('bottom_script')
     <script>
         $(document).ready(function() {
             var cat = @json($allTown);
@@ -525,4 +525,4 @@
             });
         });
     </script>
-@endsection
+@endsection --}}

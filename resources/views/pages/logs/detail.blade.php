@@ -185,12 +185,7 @@
                                                                     <td class="font-weight-bold">Created At:</td>
                                                                     <td>{{ $log->complaint->created_at->format('F d, Y \a\t H:i:s') }}</td>
                                                                 </tr>
-                                                                @if($log->complaint->town)
-                                                                    <tr>
-                                                                        <td class="font-weight-bold">Town:</td>
-                                                                        <td>{{ $log->complaint->town->town }}</td>
-                                                                    </tr>
-                                                                @endif
+
                                                             </table>
                                                         </div>
                                                     </div>

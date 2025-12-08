@@ -123,9 +123,7 @@
                         </div>
                     <div class="col-md-6">
                         <h2 class="mb-2">{{ $agent->user->name }}</h2>
-                        <p class="mb-1 opacity-75">
-                            <i class="fas fa-map-marker-alt me-2"></i>{{ $agent->town->town }}
-                        </p>
+
                         <p class="mb-1 opacity-75">
                             <i class="fas fa-building me-2"></i>{{ $agent->complaint_type?->title ?? 'N/A' }}
                         </p>
@@ -148,10 +146,7 @@
                         <h5 class="mb-3">
                             <i class="fas fa-info-circle me-2"></i>Agent Information
                         </h5>
-                        <div class="info-item">
-                            <div class="info-label">Town</div>
-                            <div class="info-value">{{ $agent->town->town }}</div>
-                        </div>
+
                         <div class="info-item">
                             <div class="info-label">Department</div>
                             <div class="info-value">{{ $agent->complaint_type?->title ?? 'N/A' }}</div>
@@ -199,7 +194,7 @@
                             <thead>
                               <tr>
                                         <th>Complaint #</th>
-                                        <th>Town</th>
+
                                         <th>Sub Type</th>
                                         <th>Description</th>
                                         <th class="text-center">Status</th>
@@ -213,12 +208,7 @@
                                             <td>
                                                 <p class="mb-0 fw-bold text-primary">{{ $row->complaints->comp_num }}</p>
                                             </td>
-                                            <td>
-                                                    <p class="mb-0 fw-bold">{{ $row->complaints->town->town }}</p>
-                                                    @if($row->complaints->subtown)
-                                                        <small class="text-muted">{{ $row->complaints->subtown->title }}</small>
-                                                    @endif
-                                            </td>
+
                                                 <td>
                                                     <span class="badge bg-info text-dark">{{ $row->complaints->subtype?->title ?? 'N/A' }}</span>
                                                 </td>
@@ -344,12 +334,7 @@
                 html += '<td>';
                 html += '<p class="mb-0 fw-bold text-primary">' + row.complaints.comp_num + '</p>';
                 html += '</td>';
-                html += '<td>';
-                html += '<p class="mb-0 fw-bold">' + (row.complaints.town ? row.complaints.town.town : 'N/A') + '</p>';
-                if (row.complaints.subtown) {
-                    html += '<small class="text-muted">' + row.complaints.subtown.title + '</small>';
-                }
-                html += '</td>';
+
                 html += '<td>';
                 html += '<span class="badge bg-info text-dark">' + (row.complaints.subtype ? row.complaints.subtype.title : 'N/A') + '</span>';
                 html += '</td>';

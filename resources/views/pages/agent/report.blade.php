@@ -194,7 +194,7 @@
                 <img src="{{ asset('assets/images/unnamed.png') }}" alt="Company Logo">
             </div>
             <div class="header-content">
-                <div class="report-title">KW&SC-CRM</div>
+                <div class="report-title">NEW CRM</div>
                 <div class="report-subtitle">Engineer Performance Report (Summary)</div>
                 <div class="report-date">REPORT CREATED DATE: {{ \Carbon\Carbon::now()->format('d F Y') }}</div>
             </div>
@@ -204,7 +204,7 @@
         <div class="report-section">
             <div style="font-size: 11pt;">
                 <p><strong>EXECUTIVE ENGINEER:</strong> {{ $agent->user->name }}</p>
-                <p><strong>TOWN:</strong> {{ $agent->town->town }}</p>
+
                 <p><strong>DEPARTMENT:</strong> {{ $complaintTypeTitle }}</p>
                 @if(!empty($dateS) && !empty($dateE))
                     <p><strong>DURATION:</strong> From {{ \Carbon\Carbon::parse($dateS)->format('d F Y') }} To

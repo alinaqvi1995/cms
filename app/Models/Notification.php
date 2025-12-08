@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Town;
 use App\Models\ComplaintType;
 use App\Models\MobileAgent;
 use App\Models\Department;
@@ -45,8 +44,6 @@ class Notification extends Model
             return $this->belongsTo(MobileAgent::class, 'recipient_id');
         } elseif ($this->recipient_type === 'department') {
             return $this->belongsTo(Department::class, 'recipient_id');
-        } elseif ($this->recipient_type === 'town') {
-            return $this->belongsTo(Town::class, 'recipient_id');
         } elseif ($this->recipient_type === 'type') {
             return $this->belongsTo(ComplaintType::class, 'recipient_id');
         } elseif ($this->recipient_type === 'all') {
@@ -77,8 +74,6 @@ class Notification extends Model
         if ($this->relationLoaded('recipient') && $this->recipient && $this->recipient_id) {
             if ($this->recipient_type === 'agent') {
                 return $this->recipient->user->name ?? 'Unknown Agent';
-            } elseif ($this->recipient_type === 'town') {
-                return $this->recipient->town ?? 'Unknown Town';
             } elseif ($this->recipient_type === 'type') {
                 return $this->recipient->title ?? 'Unknown Type';
             } elseif ($this->recipient_type === 'department') {
@@ -89,8 +84,6 @@ class Notification extends Model
         // If relationship is not loaded or no recipient, return a descriptive message
         if ($this->recipient_type === 'agent') {
             return 'Agent ID: ' . ($this->recipient_id ?? 'N/A');
-        } elseif ($this->recipient_type === 'town') {
-            return 'Town ID: ' . ($this->recipient_id ?? 'N/A');
         } elseif ($this->recipient_type === 'type') {
             return 'Type ID: ' . ($this->recipient_id ?? 'N/A');
         } elseif ($this->recipient_type === 'department') {

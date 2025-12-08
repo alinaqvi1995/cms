@@ -92,7 +92,7 @@
                         <img src="{{ asset('assets/images/unnamed.png') }}" class="img-fluid" alt="main_logo" style="width: 150px;">
                             </div>
                     <div class="col-8 text-end">
-                        <h3 class="text-primary mb-2">KW&SC-CRM</h3>
+                        <h3 class="text-primary mb-2">NEW CRM</h3>
                         <h4 class="mb-3">Detailed Complaint Report</h4>
                         <p class="mb-2">
                             <span class="badge bg-dark fs-6">Comprehensive Complaint Analysis</span>
@@ -167,8 +167,7 @@
                                             <th><b>Type</b></th>
                                             <th><b>Sub-Type</b></th>
                                             <th><b>Priority</b></th>
-                                            <th><b>Town</b></th>
-                                            <th><b>Sub-town</b></th>
+
                                             <th><b>Consumer #</b></th>
                                             <th><b>CNIC</b></th>
                                             <th><b>Customer Name</b></th>
@@ -194,8 +193,7 @@
                                             {{ $record->priority ?? 'N/A' }}
                                         </span>
                                     </td>
-                                    <td>{{ $record->town ?? 'N/A' }}</td>
-                                    <td>{{ $record->sub_town ?? 'N/A' }}</td>
+
                                     <td>{{ $record->consumer_number ?? 'N/A' }}</td>
                                     <td>{{ $record->customer_cnic ?? 'N/A' }}</td>
                                     <td>{{ $record->customer_name ?? 'N/A' }}</td>
@@ -236,7 +234,7 @@
                 <div class="row mt-4">
                     <div class="col-12 text-center">
                         <p class="text-muted">
-                            <small>This report was generated automatically by KW&SC-CRM System</small>
+                            <small>This report was generated automatically by NEW CRM System</small>
                         </p>
                             </div>
                         </div>

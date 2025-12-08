@@ -41,8 +41,7 @@
                                     <p><strong>Email:</strong> {{ $complaint->email ?? 'N/A' }}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <p><strong>Town:</strong> {{ $complaint->town->town ?? 'N/A' }}</p>
-                                    <p><strong>Sub Town:</strong> {{ $complaint->subtown->title ?? 'N/A' }}</p>
+
                                     <p><strong>Complaint Type:</strong> {{ $complaint->type->title ?? 'N/A' }}</p>
                                     <p><strong>Sub Type:</strong> {{ $complaint->subtype->title ?? 'N/A' }}</p>
                                     <p><strong>Priority:</strong> {{ $complaint->prio->title ?? 'N/A' }}</p>

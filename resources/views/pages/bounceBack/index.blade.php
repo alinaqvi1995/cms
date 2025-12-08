@@ -323,7 +323,7 @@
             success: function(response) {
                 var html = '<option value="">Select Agent</option>';
                 $.each(response, function(index, agent) {
-                    html += '<option value="' + agent.id + '">' + agent.user.name + ' - ' + agent.town.town + '</option>';
+                    html += '<option value="' + agent.id + '">' + agent.user.name + '</option>';
                 });
                 $('#agent_id').html(html);
             },

@@ -31,7 +31,7 @@
                 <img src="{{ asset('assets/images/unnamed.png') }}" alt="Logo" style="height: 60px;">
             </div>
             <div class="col-6 text-end">
-                <h4 class="mb-0">KW&SC-CRM</h4>
+                <h4 class="mb-0">NEW CRM</h4>
                 <small>Consumer Billing Report</small><br>
                 <small class="text-muted">Generated on: {{ \Carbon\Carbon::now()->format('d M Y, h:i A') }}</small>
             </div>
@@ -44,7 +44,7 @@
                 <p class="mb-1"><strong>Consumer #:</strong> {{ $consumer['consumer_no'] }}</p>
                 <p class="mb-1"><strong>Name:</strong> {{ $consumer['name'] }}</p>
                 <p class="mb-1"><strong>Address:</strong> {{ $consumer['address'] }}</p>
-                <p class="mb-1"><strong>Town:</strong> {{ $consumer['town'] }}</p>
+
             </div>
 
             <!-- Arrears Section -->
@@ -98,7 +98,7 @@
 
         <!-- Footer -->
         <div class="text-center footer-note">
-            <p><small>This report was generated automatically by KW&SC-CRM System</small></p>
+            <p><small>This report was generated automatically by NEW CRM System</small></p>
         </div>
     </div>
 </div>

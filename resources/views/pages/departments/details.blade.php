@@ -26,7 +26,7 @@
                         </div>
                         {{-- <div class="row">
                             <div class="col-md-6">
-                                <p><strong>Town :</strong> <span id="comp_num">{{ $depart->town->town }}</span>
+
                                 </p>
                                 <p><strong>Department :</strong> <span id="landmark">{{ $depart->complaint_type?->title }}</span></p>
                                 <p><strong>Description :</strong> <span id="description">{{ $depart->description }}</span></p>
@@ -41,7 +41,7 @@
                             <thead>
                               <tr>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Complaint #</th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Town</th>
+
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Complaint Type</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Picture</th>
                                 {{-- <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Total Trucks</th> --}}
@@ -56,9 +56,7 @@
                                             <td>
                                                 <p class="text-xs font-weight-bold mb-0">{{ $row->comp_num }}</p>
                                             </td>
-                                            <td>
-                                                <p class="text-xs font-weight-bold mb-0">{{ $row->town->town }} {{ $row->town->subtown }}</p>
-                                            </td>
+
                                             <td>
                                                 <p class="text-xs font-weight-bold mb-0">{{ $row->type?->title }} </p>
                                             </td>

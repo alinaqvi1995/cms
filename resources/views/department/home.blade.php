@@ -143,10 +143,10 @@
                                 <div class="col-12 col-lg-4">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <h3 class="mb-1 fw-bold text-dark">KWSC - {{ auth()->user()->name }}'s Portal</h3>
+                                            <h3 class="mb-1 fw-bold text-dark">NEW CRM - {{ auth()->user()->name }}'s Portal</h3>
                                             <p class="text-muted mb-0">
                                                 <i class="fas fa-building me-1"></i>
-                                                Karachi Water & Sewerage Corporation
+                                                NEW CRM
                                             </p>
                                         </div>
                                     </div>

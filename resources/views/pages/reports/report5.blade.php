@@ -77,7 +77,7 @@
                                     style="width: 200px;">
                             </div>
                             <div class="col-7 text-end" style="padding-top:2.4rem;">
-                            <h5 class=" fs-1">KW&SC-CRM</h5>
+                            <h5 class=" fs-1">NEW CRM</h5>
                                 <h2 class="mb-4">Complaints Aging Report</h2>
                                 <p style="font-size: 1.2rem">
                                     <span class="bg-dark text-white">Aging Filter Report</span>
@@ -109,7 +109,7 @@
                                             <th class="text-white"><b>Customer Name</b></th>
                                             <th class="text-white"><b>Phone</b></th>
                                             <th class="text-white"><b>Executive Engineer</b></th>
-                                            <th class="text-white"><b>Town</b></th>
+
                                             <th class="text-white"><b>Registered Date</b></th>
                                             <th class="text-white"><b>Status update Date</b></th>
                                             <th class="text-white"><b>Priority</b></th>
@@ -126,7 +126,7 @@
                                                 <td>{{ $record->customer_name }}</td>
                                                 <td>{{ $record->Cust_number }}</td>
                                                 <td>{{ $record->Exec_Engineer }}</td>
-                                                <td>{{ $record->town }}</td>
+
                                                 <td>{{ $record->Registered_Date }}</td>
                                                 <td>{{ $record->Status_updated_date }}</td>
                                                 <td>{{ $record->PRIORITY }}</td>

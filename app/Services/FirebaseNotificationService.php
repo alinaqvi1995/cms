@@ -53,7 +53,8 @@ class FirebaseNotificationService
 
         } catch (Exception $e) {
             Log::error('Firebase initialization failed: ' . $e->getMessage());
-            throw new Exception('Firebase service not available: ' . $e->getMessage());
+            // Do not throw exception to allow app to boot without Firebase
+            $this->messaging = null;
         }
     }
 
@@ -77,6 +78,11 @@ class FirebaseNotificationService
         $failureCount = 0;
 
         try {
+            if (!$this->messaging) {
+                Log::warning('Firebase service is not initialized. Notification skipped.');
+                return ['success' => 0, 'failure' => 1, 'results' => ['error' => 'Firebase not initialized']];
+            }
+
             $notification = Notification::create($title, $body);
 
         // Ensure all data values are strings
@@ -262,26 +268,6 @@ class FirebaseNotificationService
         return $this->sendNotification($tokens, $title, $body, $data, 'general', null, 'all', $senderId);
     }
 
-    /**
-     * Send notification to agents by town
-     */
-    public function sendToAgentsByTown($townId, $title, $body, $data = [], $senderId = null)
-    {
-        $agents = \App\Models\MobileAgent::with('user')
-            ->where('town_id', $townId)
-            ->whereHas('user', function($query) {
-                $query->whereNotNull('device_token');
-            })
-            ->get();
-
-        $tokens = $agents->pluck('user.device_token')->filter()->toArray();
-
-        if (empty($tokens)) {
-            return ['success_count' => 0, 'failure_count' => 0, 'results' => []];
-        }
-
-        return $this->sendNotification($tokens, $title, $body, $data, 'general', $townId, 'town', $senderId);
-    }
 
     /**
      * Send notification to agents by type

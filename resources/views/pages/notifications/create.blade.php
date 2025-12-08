@@ -80,7 +80,7 @@
                                                 <option value="">Select Recipient Type</option>
                                                 <option value="all" {{ old('recipient_type') == 'all' ? 'selected' : '' }}>All Agents</option>
                                                 <option value="agent" {{ old('recipient_type') == 'agent' ? 'selected' : '' }}>Specific Agent</option>
-                                                <option value="town" {{ old('recipient_type') == 'town' ? 'selected' : '' }}>Town Based</option>
+
                                                 <option value="type" {{ old('recipient_type') == 'type' ? 'selected' : '' }}>Type Based</option>
                                             </select>
                                             @error('recipient_type')
@@ -143,12 +143,7 @@
                                         <small class="text-muted">Total Agents</small>
                                     </div>
                                 </div>
-                                <div class="col-6 mb-3">
-                                    <div class="border rounded p-3">
-                                        <h4 class="text-success mb-1">{{ $towns->count() }}</h4>
-                                        <small class="text-muted">Total Towns</small>
-                                    </div>
-                                </div>
+
                                 <div class="col-6 mb-3">
                                     <div class="border rounded p-3">
                                         <h4 class="text-info mb-1">{{ $types->count() }}</h4>
@@ -177,9 +172,7 @@
                                 <li class="mb-2">
                                     <strong>Specific Agent:</strong> Sends to a single agent
                                 </li>
-                                <li class="mb-2">
-                                    <strong>Town Based:</strong> Sends to all agents in a specific town
-                                </li>
+
                                 <li class="mb-2">
                                     <strong>Type Based:</strong> Sends to all agents of a specific type
                                 </li>
@@ -240,10 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
             @foreach($agents as $agent)
                 recipientIdSelect.innerHTML += '<option value="{{ $agent->id }}">{{ $agent->user->name }} ({{ $agent->town->town }})</option>';
             @endforeach
-        } else if (type === 'town') {
-            @foreach($towns as $town)
-                recipientIdSelect.innerHTML += '<option value="{{ $town->id }}">{{ $town->town }}</option>';
-            @endforeach
+
         } else if (type === 'type') {
             @foreach($types as $type)
                 recipientIdSelect.innerHTML += '<option value="{{ $type->id }}">{{ $type->title }}</option>';

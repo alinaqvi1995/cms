@@ -162,14 +162,6 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="detail-item">
-                                    <div class="detail-label">Town</div>
-                                    <div class="detail-value">{{ $complaint->town->town }}</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Sub Town</div>
-                                    <div class="detail-value">{{ $complaint->subtown->title ?? 'N/A' }}</div>
-                                </div>
-                                <div class="detail-item">
                                     <div class="detail-label">Created Date</div>
                                     <div class="detail-value">{{ $complaint->created_at->format('d M Y, h:i A') }}</div>
                                 </div>
@@ -327,13 +319,12 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Agent</th>
-                                    <th class="text-center">Town</th>
                                     <th class="text-center">Address</th>
                                     <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($complaint->town->agents as $key => $row)
+                                @foreach (\App\Models\MobileAgent::with('user')->get() as $key => $row)
                                     @if ($row->type_id == $complaint->type_id)
                                         <tr>
                                             <td>
@@ -353,12 +344,6 @@
                                                         <small class="text-muted">{{ $row->user->email }}</small>
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-info text-dark">{{ $row->town->town }}</span>
-                                                @if($row->town->subtown)
-                                                    <br><small class="text-dark">{{ $row->town->subtown }}</small>
-                                                @endif
                                             </td>
                                             <td class="text-center">
                                                 <small>{{ $row->address }}</small>
