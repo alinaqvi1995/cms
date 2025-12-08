@@ -1,0 +1,1882 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\ComplaintAssignAgent;
+use App\Models\ComplaintAssignDepartment;
+use App\Models\MobileAgent;
+use App\Models\ComplaintType;
+use App\Models\SubType;
+use App\Models\User;
+use App\Models\Complaints;
+use App\Models\Source;
+use App\Models\Customer;
+use App\Models\Priorities;
+use App\Models\Department;
+use App\Models\BounceBackComplaint;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Traits\SaveImage;
+use Haruncpi\LaravelIdGenerator\IdGenerator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Exception;
+use App\Services\LogService;
+use App\Services\FileScan;
+use App\Services\FirebaseNotificationService;
+use App\Traits\Loggable;
+use App\Models\logs;
+use Illuminate\Support\Facades\Http;
+
+class ComplaintController extends Controller
+{
+    //
+    use SaveImage, Loggable;
+    //
+    protected function validator(array $data)
+    {
+        return Validator::make($data, [
+            'source' => ['required', 'string'],
+            'description' => ['required', 'string'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp,svg', 'max:2048'],
+        ]);
+    }
+    public function index(Request $request)
+    {
+        // dd($request->all());
+        $complaint = Complaints::with('customer', 'type', 'prio', 'assignedComplaints', 'assignedComplaintsDepartment', 'bounceBackComplaints')->OrderBy('id', 'DESC');
+        $defaultExcluded = [1, 2, 5];
+        if ($request->has('search') && $request->search != null && $request->search != '') {
+            if (auth()->user()->role == 4) {
+                $complaint = $complaint->whereHas('assignedComplaintsDepartment', function ($query) {
+                    $query->where('user_id', auth()->user()->id);
+                })->where(function ($query) use ($request) {
+                    $query->where('comp_num', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('customer_num', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('phone', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('email', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('address', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('landmark', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('customer_name', 'LIKE', '%' . $request->search . '%');
+                });
+                // dd($complaint->get()->toArray());
+            } else {
+                $complaint = $complaint->where(function ($query) use ($request) {
+                    $query->where('comp_num', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('customer_num', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('phone', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('email', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('address', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('landmark', 'LIKE', '%' . $request->search . '%')
+                        ->orWhere('customer_name', 'LIKE', '%' . $request->search . '%');
+                });
+            }
+            if (count($complaint->get()) < 1) {
+                $customer = Customer::where('customer_id', $request->search)
+                    ->orwhere('customer_name', $request->search)->first();
+                if ($customer != null) {
+                    $complaint = $complaint->where('customer_id', $customer->id);
+                }
+            }
+            // ->orWhereHas('customer',function($query) use($request){
+            //     $query->where('customer_id',$request->search);
+            // });
+        }
+        if ($request->has('comp_type_id')) {
+            $ids = $request->get('comp_type_id');
+            if (is_string($ids)) {
+                $ids = array_filter(array_map('trim', explode(',', $ids)));
+            }
+            if (!is_array($ids)) {
+                $ids = [$ids];
+            }
+            $ids = array_values(array_filter($ids, function ($v) { return $v !== null && $v !== ''; }));
+            if (count($ids) > 0) {
+                $complaint = $complaint->whereIn('type_id', $ids);
+                
+                // Filter by specific subtypes for request management
+                // Define allowed subtypes for each type
+                $allowedSubtypes = [];
+                
+                // Type 1: New Connection Sewerage - only subtype 93
+                if (in_array('1', $ids)) {
+                    $allowedSubtypes[] = 93;
+                }
+                
+                // Type 2: New Connection Water - only subtype 85
+                if (in_array('2', $ids)) {
+                    $allowedSubtypes[] = 85;
+                }
+                
+                // Type 5: New Connection Commercial - only subtypes 95 and 102
+                if (in_array('5', $ids)) {
+                    $allowedSubtypes[] = 95;
+                    $allowedSubtypes[] = 102;
+                }
+                
+                // Type 3: Billing - specific subtypes
+                if (in_array('3', $ids)) {
+                    $allowedSubtypes = array_merge($allowedSubtypes, [6,7,8,9,10,30,31,92,96,99,100,101,106]);
+                }
+                
+                // Apply subtype filter if we have specific subtypes defined
+                if (!empty($allowedSubtypes)) {
+                    $complaint = $complaint->whereIn('subtype_id', $allowedSubtypes);
+                }
+            }
+        } elseif ($request->has('type_id') && $request->type_id != null && $request->type_id != '') {
+            $complaint = $complaint->where('type_id', $request->type_id);
+        }
+        
+        // Always exclude request subtypes from complaint management (unless it's request management page)
+        if (!$request->has('comp_type_id')) {
+            // Define request subtypes that should be excluded from regular complaint management
+            $requestSubtypes = [
+                // Type 1: New Connection Sewerage - subtype 93
+                93,
+                // Type 2: New Connection Water - subtype 85  
+                85,
+                // Type 5: New Connection Commercial - subtypes 95, 102
+                95, 102,
+                // Type 3: Billing request subtypes
+                6, 7, 8, 9, 10, 30, 31, 92, 96, 99, 100, 101, 106
+            ];
+            
+            $complaint = $complaint->whereNotIn('subtype_id', $requestSubtypes);
+        }
+        if ($request->has('status') && $request->status != null && $request->status != '') {
+            if ($request->status == 1 || $request->status == 2) {
+                // Fetch complaints that have at least one of the relationships
+                $complaint = $complaint->where(function ($query) {
+                    $query->whereHas('assignedComplaints')
+                        ->orWhereHas('assignedComplaintsDepartment');
+                });
+            } else {
+                // Fetch complaints that have none of the relationships
+                $complaint = $complaint->where(function ($query) {
+                    $query->whereDoesntHave('assignedComplaints')
+                        ->whereDoesntHave('assignedComplaintsDepartment');
+                });
+            }
+        }
+        if ($request->has('comp_status') && $request->comp_status != null && $request->comp_status != '') {
+            $complaint = $complaint->where('status', $request->comp_status);
+        }
+
+        // New filters
+        if ($request->has('source') && $request->source != null && $request->source != '') {
+            $complaint = $complaint->where('source', $request->source);
+        }
+
+        if ($request->has('consumer_number') && $request->consumer_number != null && $request->consumer_number != '') {
+            $complaint = $complaint->where(function ($query) use ($request) {
+                $query->where('customer_num', 'LIKE', '%' . $request->consumer_number . '%')
+                    ->orWhereHas('customer', function ($q) use ($request) {
+                        $q->where('customer_id', 'LIKE', '%' . $request->consumer_number . '%');
+                    });
+            });
+        }
+
+        if ($request->has('bounce_back') && $request->bounce_back != null && $request->bounce_back != '') {
+            if ($request->bounce_back == '1') {
+                $complaint = $complaint->whereHas('bounceBackComplaints', function ($query) {
+                    $query->where('status', 'active');
+                });
+            } elseif ($request->bounce_back == '0') {
+                $complaint = $complaint->whereDoesntHave('bounceBackComplaints', function ($query) {
+                    $query->where('status', 'active');
+                });
+            }
+        }
+
+        if ($request->has('from_date') && $request->from_date != null && $request->from_date != '') {
+            $complaint = $complaint->whereDate('created_at', '>=', $request->from_date);
+        }
+
+        if ($request->has('to_date') && $request->to_date != null && $request->to_date != '') {
+            $complaint = $complaint->whereDate('created_at', '<=', $request->to_date);
+        }
+
+        if (auth()->user()->role == 4) {
+            $complaint = $complaint->whereHas('assignedComplaintsDepartment', function ($query) {
+                $query->where('user_id', auth()->user()->id);
+            });
+            // return true;
+        }
+
+        $complaint = $complaint->paginate(10)->appends([
+            'type_id' => request()->get('type_id'),
+            'comp_type_id' => request()->get('comp_type_id'),
+            'search' => request()->get('search'),
+            'source' => request()->get('source'),
+            'consumer_number' => request()->get('consumer_number'),
+            'bounce_back' => request()->get('bounce_back'),
+            'from_date' => request()->get('from_date'),
+            'to_date' => request()->get('to_date'),
+        ]);
+        // dd($complaint->toArray());
+        if ($request->has('type')) {
+            return $complaint;
+        }
+        $comptypeQuery = ComplaintType::orderBy('title', 'asc');
+        if ($request->has('comp_type_id')) {
+            $ids = $request->get('comp_type_id');
+            if (is_string($ids)) {
+                $ids = array_filter(array_map('trim', explode(',', $ids)));
+            }
+            if (!is_array($ids)) {
+                $ids = [$ids];
+            }
+            $ids = array_values(array_filter($ids, function ($v) { return $v !== null && $v !== ''; }));
+            if (count($ids) > 0) {
+                $comptypeQuery = $comptypeQuery->whereIn('id', $ids);
+            }
+        }
+        
+        // Always exclude request subtypes from complaint management dropdown (unless it's request management page)
+        if (!$request->has('comp_type_id')) {
+            // Define request subtypes that should be excluded from regular complaint management
+            $requestSubtypes = [
+                // Type 1: New Connection Sewerage - subtype 93
+                93,
+                // Type 2: New Connection Water - subtype 85  
+                85,
+                // Type 5: New Connection Commercial - subtypes 95, 102
+                95, 102,
+                // Type 3: Billing request subtypes
+                6, 7, 8, 9, 10, 30, 31, 92, 96, 99, 100, 101, 106
+            ];
+            
+            // For complaint types dropdown, we need to exclude types that only have request subtypes
+            // But keep types that have both request and regular subtypes
+            $comptypeQuery = $comptypeQuery->where(function($query) use ($requestSubtypes) {
+                $query->whereDoesntHave('complaints', function($q) use ($requestSubtypes) {
+                    $q->whereIn('subtype_id', $requestSubtypes);
+                })->orWhereHas('complaints', function($q) use ($requestSubtypes) {
+                    $q->whereNotIn('subtype_id', $requestSubtypes);
+                });
+            });
+        }
+        $comptype = $comptypeQuery->get();
+        $sources = \App\Models\Source::orderBy('title', 'asc')->get();
+        // dd($complaint->toArray());
+        if (auth()->user()->role == 4) {
+            return view('department.pages.complaints.index', compact('complaint', 'comptype', 'sources'));
+        }
+        return view('pages.complaints.index', compact('complaint', 'comptype', 'sources'));
+    }
+    public function solved_by_department(Request $request, $id)
+    {
+        $message = null;
+        $complaint = Complaints::find($id);
+        if ($complaint) {
+            $request->merge(['id' => $id]);
+            $request->merge(['status' => 1]);
+            $response = $this->agent_complaints_update($request);
+            $message = json_decode($response->getContent());
+        }
+        // dd($message->message);
+        return redirect()->back()->with('success', $message->message);
+    }
+    public function updateStatus(Request $request)
+    {
+        $complaint = Complaints::find($request->complaint_id);
+        $status = '';
+        if ($complaint) {
+            $complaint->status = $request->status;
+            $complaint->save();
+            if($request->status == 1)
+            {
+                $status = 'Completed';
+            }
+            elseif($request->status == 2)
+            {
+                $status = 'Work In Progress';
+            }
+            else
+            {
+                $status = 'Pending';
+            }
+            LogService::create('Complaint', $request->complaint_id, auth()->user()->name.' has updated the complaint status to '.$status);
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false]);
+    }
+    public function create(Request $request)
+    {
+        $type = ComplaintType::orderBy('title', 'asc')->get();
+        $subtype = SubType::orderBy('title', 'asc')->get();
+        $prio = Priorities::orderBy('title', 'asc')->get();
+        $source = Source::orderBy('title', 'asc')->get();
+        $customer = NULL;
+        if ($request->has('search')) {
+            $customer = Customer::where('customer_id', $request->search)->first();
+            if ($customer == null) {
+                return redirect()->back()->with('error', "Customer Not Found...");
+            }
+        }
+
+        return view('pages.complaints.create', compact('customer', 'type', 'prio', 'subtype', 'source'));
+    }
+    public function store(Request $request)
+    {
+        $valid = $this->validator($request->all());
+        if ($valid->valid()) {
+            $data = $request->all();
+            $prefix = "COMPLAINT-";
+            $lastComp = DB::table('complaint')->where('comp_num', 'like', 'COMPLAINT-%')->latest('id')->first();
+
+            if ($lastComp) {
+                $lastNumber = (int) str_replace('COMPLAINT-', '', $lastComp->comp_num);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 10000; // Start from this if no record exists
+            }
+
+            $CompNum = "COMPLAINT-" . $newNumber;
+            $data['comp_num'] = $CompNum;
+            // $now = Carbon::now();
+            // $CompNum = IdGenerator::generate(['table' => 'complaint', 'field' => 'comp_num', 'length' => 20, 'prefix' => $prefix]);
+            // $data['comp_num'] = $CompNum;
+            // $data['comp_num'] = $prefix . $now->format("mdHis")  ;
+            // $data['comp_num'] = $prefix . $now->format("YmdHis") . round($now->format("u") / 1000);
+            // FileScan::scanWithTrendMicro('Complaint', $cmp->id, auth()->user()->name.' has created a complaint record.');
+
+            if ($request->has('image') && $request->image != NULL) {
+                $data['image'] = $this->complaintImage($request->image);
+            }
+            $cmp = Complaints::create($data);
+            LogService::create('Complaint', $cmp->id, auth()->user()->name.' has created a complaint record.');
+            // Also log using our new Loggable trait
+            $this->logComplaintAction($cmp->id, 'created', auth()->user()->name.' has created a complaint record.');
+            if ($cmp->customer_id != 0) {
+                $phone = $cmp->customer->phone;
+            } else {
+                $phone = $cmp->phone;
+            }
+            $curl = curl_init();
+
+            curl_setopt_array(
+                $curl,
+                array(
+                    CURLOPT_URL => 'http://uti.bizintel.co:8003/ComplaintAPI.php',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'GET',
+                    CURLOPT_POSTFIELDS => '{
+                    "MobileNumber":"' . $phone . '",
+                    "Type":"ComplaintLaunch",
+                    "ComplaintNumber":"' . $cmp->comp_num . '"
+
+                }
+                ',
+                    CURLOPT_HTTPHEADER => array(
+                        'Content-Type: application/json'
+                    ),
+                )
+            );
+
+            $response = curl_exec($curl);
+
+            curl_close($curl);
+            return redirect()->route('compaints-management.index')->with('success', 'Record created successfully.');
+        } else {
+            return back()->with('error', $valid->errors());
+        }
+    }
+    public function testImageSanitization(Request $request)
+    {
+        try {
+            if ($request->has('image') && $request->image != NULL) {
+                $result = $this->complaintImage($request->image);
+                
+                if (is_string($result)) {
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Image sanitized and saved successfully',
+                        'file_path' => $result
+                    ]);
+                } else {
+                    return $result; // This will be the error response from complaintImage
+                }
+            }
+            
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No image provided'
+            ]);
+        } catch (Exception $ex) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Image sanitization test failed: ' . $ex->getMessage()
+            ]);
+        }
+    }
+    public function edit($id)
+    {
+        $complaint = Complaints::find($id);
+        $type = ComplaintType::orderBy('title', 'asc')->get();
+        // Load subtypes based on the current complaint's type_id
+        $subtype = SubType::where('type_id', $complaint->type_id)->orderBy('title', 'asc')->get();
+        $prio = Priorities::orderBy('title', 'asc')->get();
+        $source = Source::orderBy('title', 'asc')->get();
+        LogService::create('Complaint', $id, auth()->user()->name.' redirect to edit a complaint record.');
+        if (auth()->user()->role == 4) {
+            return view('department.pages.complaints.edit', compact('complaint', 'prio', 'source', 'type', 'subtype'));
+        }
+        return view('pages.complaints.edit', compact('complaint', 'prio', 'source', 'type', 'subtype'));
+    }
+    public function update(Request $request, $id)
+    {
+        $valid = $this->validator($request->all());
+        if ($valid->valid()) {
+            $data = $request->except(['_method', '_token']);
+            if ($request->has('image') && $request->image != NULL) {
+                $data['image'] = $this->complaintImage($request->image);
+            }
+            Complaints::where('id', $id)->update($data);
+            LogService::create('Complaint', $id, auth()->user()->name.' has updated complaint record.');
+            // Also log using our new Loggable trait
+            $this->logComplaintAction($id, 'updated', auth()->user()->name.' has updated complaint record.');
+            if (auth()->user()->role == 4) {
+                return redirect()->route('deparment.complaint.index')->with('success', 'Record Updated successfully.');
+            }
+            return redirect()->route('compaints-management.index')->with('success', 'Record Updated successfully.');
+        } else {
+            return back()->with('error', $valid->errors());
+        }
+    }
+    public function agent_wise_complaints()
+    {
+        $type_id = auth('api')->user()->agent->type_id;
+        // dd(auth()->user()->id);
+        $complaint = Complaints::with('customer', 'type', 'subtype', 'prio', 'assignedComplaints')->whereHas('assignedComplaints', function ($query) {
+            $query->where('agent_id', auth('api')->user()->agent->id);
+        })->where('type_id', $type_id)->get();
+        return $complaint;
+    }
+    public function agent_wise_complaints_paginate()
+    {
+        $type_id = auth('api')->user()->agent->type_id;
+        // dd(auth()->user()->id);
+        $complaint = Complaints::with('customer', 'type', 'subtype', 'prio', 'assignedComplaints')->whereHas('assignedComplaints', function ($query) {
+            $query->where('agent_id', auth('api')->user()->agent->id);
+        })->where('type_id', $type_id)->paginate(10);
+        return $complaint;
+    }
+    public function customer_wise_complaints()
+    {
+        try {
+            $user = auth('api')->user();
+
+            if (!$user || $user->role != 5) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            $customer_id = auth('api')->user()->customer->id;
+            if (auth('api')->user()->status == 0) {
+                return response()->json(['success' => 'No Record Found...'], 500);
+            }
+            // $type_id = auth('api')->user()->agent->type_id;
+            $complaint = Complaints::with('customer', 'type', 'subtype', 'prio')->where('customer_id', $customer_id)->get();
+            return $complaint;
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    public function customer_wise_complaints_paginate()
+    {
+        try {
+            $user = auth('api')->user();
+
+            if (!$user || $user->role != 5) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            $customer_id = auth('api')->user()->customer->id;
+            if (auth('api')->user()->status == 0) {
+                return response()->json(['success' => 'No Record Found...'], 500);
+            }
+            // $type_id = auth('api')->user()->agent->type_id;
+            $complaint = Complaints::with('customer', 'type', 'subtype', 'prio')->where('customer_id', $customer_id)->paginate(10);
+            return $complaint;
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    public function type_wise_complaints()
+    {
+        $type_id = auth('api')->user()->agent->type_id;
+        $typesWithComplaintsCount = ComplaintType::withCount([
+            'complaints' => function (Builder $query) use ($type_id) {
+                $query->where('type_id', $type_id);
+            }
+        ])
+            ->get(['id', 'title']);
+        return $typesWithComplaintsCount;
+    }
+    public function subtype_wise_complaints()
+    {
+        $type_id = auth('api')->user()->agent->type_id;
+        $subtypesWithComplaintsCount = SubType::withCount([
+            'complaints' => function (Builder $query) use ($type_id) {
+                $query->where('type_id', $type_id);
+            }
+        ])
+            ->get(['id', 'title']);
+        return $subtypesWithComplaintsCount;
+    }
+    public function agent_wise_complaints_count()
+    {
+        $typeCount = array();
+        $type_id = auth('api')->user()->agent->type_id;
+
+        $data['agent'] = MobileAgent::with('assignedComplaints', 'assignedComplaints.complaints')->find(auth('api')->user()->agent->id);
+        $data['total_complaint'] = Complaints::with('customer', 'type', 'prio')->where('type_id', $type_id)->count();
+        $data['total_complaint_pending'] = Complaints::where('status', 0)->where('type_id', $type_id)->count();
+        $data['total_complaint_complete'] = Complaints::where('status', 1)->where('type_id', $type_id)->count();
+        $type = ComplaintType::with('complaints')->whereHas('complaints', function ($query) use ($type_id) {
+            $query->where('type_id', $type_id);
+        })->get();
+        foreach ($type as $key => $row) {
+            $result[++$key] = [$row->title, (int) count($row->complaints)];
+        }
+        $data['type_count'] = $result;
+        return $data;
+    }
+    public function agent_complaints_update(Request $request)
+    {
+        $complaint = Complaints::with('customer', 'type')->find($request->id);
+        $complaint->status = $request->status;
+        if ($request->has('before_image')) {
+            $complaint->before_image = $this->before($request->before_image);
+        }
+        if ($request->has('after_image')) {
+            $complaint->after_image = $this->after($request->after_image);
+        }
+        if ($request->has('agent_description')) {
+            $complaint->agent_description = $request->agent_description;
+        }
+        $complaint->save();
+        if ($complaint->phone != NULL) {
+            $phone = $complaint->phone;
+        } else {
+            $phone = $complaint->customer->phone;
+        }
+        if(auth('api')->user() != null)
+        {
+            LogService::create('Complaint', $complaint->id, auth('api')->user()->name.' has updated the complaint status to Complated');
+        }
+        else
+        {
+            LogService::create('Complaint', $complaint->id, auth()->user()->name.' has updated the complaint status to Complated');
+        }
+        if ($request->status == "1") {
+
+            $curl = curl_init();
+
+            curl_setopt_array(
+                $curl,
+                array(
+                    CURLOPT_URL => 'http://uti.bizintel.co:8003/ComplaintAPI.php',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'GET',
+                    CURLOPT_POSTFIELDS => '{
+                        "MobileNumber":"' . $phone . '",
+                        "Type":"ComplaintSolve",
+                        "ComplaintNumber":"' . $complaint->comp_num . '"
+
+                    }
+                    ',
+                    CURLOPT_HTTPHEADER => array(
+                        'Content-Type: application/json'
+                    ),
+                )
+            );
+
+            $response = curl_exec($curl);
+
+            curl_close($curl);
+
+
+            $curl = curl_init();
+
+            curl_setopt_array(
+                $curl,
+                array(
+                    CURLOPT_URL => 'https://bsms.ufone.com/bsms_v8_api/sendapi-0.3.jsp?id=03348970362&message=le chal gay sms&shortcode=KWSC&lang=urdu&mobilenum=' . $phone . '&password=Smskwsc%402024',
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_ENCODING => '',
+                    CURLOPT_MAXREDIRS => 10,
+                    CURLOPT_TIMEOUT => 0,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                    CURLOPT_CUSTOMREQUEST => 'GET',
+                    CURLOPT_HTTPHEADER => array(
+                        'Cookie: cookiesession1=678B2883C43F88D5E4F3BA5C946B0899'
+                    ),
+                )
+            );
+
+            $response = curl_exec($curl);
+
+            curl_close($curl);
+        }
+
+        return response()->json(["message" => "Your Given Information Addedd Successfully..."]);
+    }
+    public function detail($id)
+    {
+        $complaint = Complaints::find($id);
+        $comp_type = $complaint->type_id;
+        // dd($comp_type);
+        $department_user = User::with('department')
+            ->where('department_id', '!=', 0)
+            ->where('role', 4)
+            ->whereHas('department', function ($query) use ($comp_type) {
+                $query->where('comp_type_id', $comp_type);
+            })
+            ->get();
+        LogService::create('Complaint', $complaint->id, auth()->user()->name.' has redirect to the complaint.');
+        // dd($department_user->toArray());
+        if (auth()->user()->role == 4) {
+            return view('department.pages.complaints.details', compact('complaint', 'department_user'));
+        }
+        return view('pages.complaints.details', compact('complaint', 'department_user'));
+    }
+    public function assign_complaint($agentId, $complaintId)
+    {
+        $check = ComplaintAssignAgent::where('complaint_id', $complaintId)->where('agent_id', $agentId)->first();
+        if ($check == null) {
+            $alreadyAssign = ComplaintAssignAgent::where('complaint_id', $complaintId)->get();
+            if (count($alreadyAssign) > 0) {
+                foreach ($alreadyAssign as $row) {
+                    $row->delete();
+                }
+            }
+            $check = ComplaintAssignAgent::create([
+                'complaint_id' => $complaintId,
+                'agent_id' => $agentId,
+            ]);
+            $agent = MobileAgent::with('user')->find($agentId);
+            LogService::create('Complaint', $complaintId, auth()->user()->name.' has assigned complaint to agent '.$agent->user->name. ' ('.$agent->user->email.')');
+
+            // Send push notification to agent (make sure 'device_token' exists on MobileAgent or User)
+            if (isset($agent->user->device_token)) {
+                $notificationService = new FirebaseNotificationService();
+                $notificationService->sendNotification(
+                    $agent->user->device_token,
+                    'New Complaint Assigned',
+                    'A new complaint has been assigned to you.',
+                    ['complaint_id' => $complaintId, 'type' => 'complaint_assigned'],
+                    'complaint_assigned',
+                    $agent->id,
+                    'agent',
+                    auth()->id()
+                );
+            }
+        } else {
+            $agent = MobileAgent::with('user')->find($agentId);
+            LogService::create('Complaint', $complaintId, auth()->user()->name.' try to assigned complaint to agent '.$agent->user->name. ' ('.$agent->user->email.') but this complaint is already assined to this agent.');
+            return redirect()->back()->with('error', "Already Assigned this Complaint...!");
+        }
+
+        return redirect()->route('agent-management.details', $agentId);
+    }
+    public function assign_complaint_department($userId, $complaintId)
+    {
+        $check = ComplaintAssignDepartment::where('complaint_id', $complaintId)->where('user_id', $userId)->first();
+        if ($check == null) {
+            $alreadyAssign = ComplaintAssignDepartment::where('complaint_id', $complaintId)->get();
+            if (count($alreadyAssign) > 0) {
+                foreach ($alreadyAssign as $row) {
+                    $row->delete();
+                }
+            }
+            $check = ComplaintAssignDepartment::create([
+                'complaint_id' => $complaintId,
+                'user_id' => $userId,
+            ]);
+            $departuser = User::find($userId);
+            LogService::create('Complaint', $complaintId, auth()->user()->name.' has assigned complaint to department '.$departuser->name. ' ('.$departuser->email.')');
+
+            // Send push notification to department user (make sure 'device_token' exists on User)
+            if (isset($departuser->device_token)) {
+                $notificationService = new FirebaseNotificationService();
+                $notificationService->sendNotification(
+                    $departuser->device_token,
+                    'New Complaint Assigned',
+                    'A new complaint has been assigned to your department.',
+                    ['complaint_id' => $complaintId, 'type' => 'complaint_assigned'],
+                    'complaint_assigned',
+                    $departuser->id,
+                    'department',
+                    auth()->id()
+                );
+            }
+        } else {
+            $departuser = User::find($userId);
+            LogService::create('Complaint', $complaintId, auth()->user()->name.' try to assigne complaint to department '.$departuser->name. ' ('.$departuser->email.') but this complaint has already assigned to this department.');
+            return redirect()->back()->with('error', "Already Assigned this Complaint...!");
+        }
+        // return redirect()->route('agent-management.details', $userId);
+        return redirect()->back()->with('success', 'Complaint has been assigned to the department.');
+    }
+    public function report()
+    {
+        $type = ComplaintType::get();
+        $prio = Priorities::get();
+        $source = Complaints::get()->groupBy('source');
+        $subtype = SubType::all();
+        return view('pages.reports.index', compact('subtype', 'type', 'prio', 'source'));
+    }
+    public function generate_report(Request $request)
+    {
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $type = null;
+        $prio = null;
+        $source = null;
+        $consumer = null;
+        // $comp = Complaints::with('type')->whereDate('created_at','>=',$dateS)->whereDate('created_at','<=',$dateE)->orderBy('created_at')
+        // ->get()->groupBy('type_id');
+        // $comp = Complaints::with('type')
+        //     ->whereDate('created_at','>=',$dateS)
+        //     ->whereDate('created_at','<=',$dateE)
+        //     ->orderBy('type_id','ASC')
+        //     ->get()
+        //     ->groupBy([ function ($post) {
+        //         return $post->created_at->format('Y-m-d');
+        //     },'type_id']);
+        $complaints = Complaints::with('type', 'customer')
+            ->select('type_id', DB::raw('date(created_at) as date'), DB::raw('count(*) as num_complaints'))
+            ->whereBetween('created_at', [$dateS, $dateE]);
+        if ($request->has('type_id')) {
+            $complaints = $complaints->where('type_id', $request->type_id);
+            $type = ComplaintType::find($request->type_id);
+        }
+        if ($request->has('prio_id')) {
+            $complaints = $complaints->where('prio_id', $request->prio_id);
+            $prio = Priorities::find($request->prio_id);
+        }
+        if ($request->has('customer_id')) {
+            $cust = $request->customer_id;
+            $complaints = $complaints->WhereHas('customer', function ($query) use ($cust) {
+                $query->where('customer_id', $cust);
+            })->orwhere('customer_num', $request->customer_id);
+            $consumer = $cust;
+        }
+        if ($request->has('source')) {
+            if ($request->source != "all") {
+                $complaints = $complaints->where('source', $request->source);
+            }
+            $source = $request->source;
+        }
+        $complaints = $complaints->groupBy('type_id', 'date')
+            ->orderBy('date', 'ASC')
+            ->get();
+
+        // $type = ComplaintType::get();
+        //     ->groupBy([function ($post) {
+        //         return $post->created_at->format('Y-m-d');
+        //     }, '']);
+
+        // dd($comp);
+        // dd($complaints->toArray());
+        return view('pages.reports.report', compact('complaints', 'subtown', 'type', 'dateS', 'dateE', 'town', 'consumer', 'source', 'prio'));
+    }
+    public function generate_report4(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $town = $request->town_id;
+        $type = $request->type_id;
+
+        // SQL query to fetch data with parameter binding
+        $TATcompleteddetails = DB::select("
+        SELECT
+            c.comp_num AS Complaint,
+            ct.title AS COMPLAIN_TYPE,
+            st.title AS GRIEVANCE_TYPE,
+            c.customer_name,
+            c.phone,
+            u.name AS Executive_Engineer,
+            c.created_at AS CreatedDate,
+            c.updated_at AS ResolvedDate,
+            p.title AS PRIORITY,
+            CONCAT(
+                FLOOR(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at) / 24), ' days and ',
+                MOD(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at), 24), ' hours'
+            ) AS TurnaroundTime,
+            TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at) AS TimeInHours
+        FROM
+            complaint c
+        LEFT JOIN
+            priorities p ON c.prio_id = p.id
+        JOIN complaint_types ct ON ct.id = c.type_id
+        JOIN sub_types st ON st.id = c.subtype_id
+        JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+        JOIN mobile_agent m ON ca.agent_id = m.id
+        JOIN users u ON m.user_id = u.id
+        WHERE
+            c.updated_at IS NOT NULL
+            AND c.status = 1
+            AND c.created_at != c.updated_at
+            AND c.town_id = :town
+            And c.type_id = :type
+            AND c.created_at BETWEEN :from_date AND :to_date
+        ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+            'town' => $town,
+            'type' => $type,
+        ]);
+        // Return results to the view
+        return view('pages.reports.report4', compact('TATcompleteddetails', 'dateS', 'dateE', 'type', 'town'));
+    }
+
+    public function generate_report2(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+
+        // SQL query to fetch data with parameter binding
+        $TATcompleted = DB::select("
+        SELECT
+            c.comp_num AS Complaint,
+            ct.title AS COMPLAIN_TYPE,
+            st.title AS GRIEVANCE_TYPE,
+            c.customer_name,
+            c.phone,
+            u.name AS Executive_Engineer,
+            c.created_at AS CreatedDate,
+            c.updated_at AS ResolvedDate,
+            p.title AS PRIORITY,
+            CONCAT(
+                FLOOR(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at) / 24), ' days and ',
+                MOD(TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at), 24), ' hours'
+            ) AS TurnaroundTime,
+            TIMESTAMPDIFF(HOUR, c.created_at, c.updated_at) AS TimeInHours
+        FROM
+            complaint c
+        LEFT JOIN
+            priorities p ON c.prio_id = p.id
+        JOIN complaint_types ct ON ct.id = c.type_id
+        JOIN sub_types st ON st.id = c.subtype_id
+        JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+        JOIN mobile_agent m ON ca.agent_id = m.id
+        JOIN users u ON m.user_id = u.id
+        WHERE
+            c.updated_at IS NOT NULL
+            AND c.status = 1
+            AND c.created_at != c.updated_at
+            AND c.created_at BETWEEN :from_date AND :to_date
+    ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+        ]);
+        // Return results to the view
+        return view('pages.reports.report2', compact('TATcompleted', 'dateS', 'dateE'));
+    }
+
+    public function generate_report3(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+
+
+        // SQL query to fetch data with parameter binding
+        $TATpending = DB::select("
+        SELECT
+            c.comp_num AS Complaint,
+            ct.title AS COMPLAIN_TYPE,
+            st.title AS GRIEVANCE_TYPE,
+            c.customer_name,
+            c.phone,
+            u.name AS Executive_Engineer,
+            c.created_at AS CreatedDate,
+            c.updated_at AS ResolvedDate,
+            p.title AS PRIORITY,
+            CONCAT(
+                FLOOR(TIMESTAMPDIFF(HOUR, c.created_at, CURRENT_TIMESTAMP) / 24), ' days and ',
+                MOD(TIMESTAMPDIFF(HOUR, c.created_at, CURRENT_TIMESTAMP), 24), ' hours'
+            ) AS AgingTime,
+            TIMESTAMPDIFF(HOUR, c.created_at, CURRENT_TIMESTAMP) AS TimeInHours
+        FROM
+            complaint c
+        LEFT JOIN
+            priorities p ON c.prio_id = p.id
+        JOIN complaint_types ct ON ct.id = c.type_id
+        JOIN sub_types st ON st.id = c.subtype_id
+        JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+        JOIN mobile_agent m ON ca.agent_id = m.id
+        JOIN users u ON m.user_id = u.id
+        WHERE
+            c.updated_at IS NOT NULL
+            AND c.status = 0
+            AND c.created_at BETWEEN :from_date AND :to_date
+    ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+        ]);
+        // Return results to the view
+        return view('pages.reports.report3', compact('TATpending', 'dateS', 'dateE',));
+    }
+
+    public function generate_report5(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $town = $request->town_id;
+        $type = $request->type_id;
+
+        // SQL query to fetch data with parameter binding
+        $TATpendingdetail = DB::select("
+        SELECT
+            c.comp_num AS Complaint,
+            ct.title AS COMPLAIN_TYPE,
+            st.title AS GRIEVANCE_TYPE,
+            c.customer_name,
+            c.phone AS Cust_number,
+            u.name AS Exec_Engineer,
+            t.town ,
+            c.created_at AS Registered_Date,
+            case when c.created_at = c.updated_at then NULL else c.updated_at end as Status_updated_date,
+            p.title AS PRIORITY,
+            CONCAT(
+                FLOOR(TIMESTAMPDIFF(HOUR, c.created_at, CURRENT_TIMESTAMP) / 24), ' days and ',
+                MOD(TIMESTAMPDIFF(HOUR, c.created_at, CURRENT_TIMESTAMP), 24), ' hours'
+            ) AS AgingTime,
+            TIMESTAMPDIFF(HOUR, c.created_at, CURRENT_TIMESTAMP) AS TimeInHours
+        FROM
+            complaint c
+        left join towns t on t.id = c.town_id
+        LEFT JOIN priorities p ON c.prio_id = p.id
+        JOIN complaint_types ct ON ct.id = c.type_id
+        JOIN sub_types st ON st.id = c.subtype_id
+        JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+        JOIN mobile_agent m ON ca.agent_id = m.id
+        JOIN users u ON m.user_id = u.id
+        WHERE
+            c.updated_at IS NOT NULL
+            AND c.status = 0
+            AND c.town_id = :town
+            And c.type_id = :type
+            AND c.created_at BETWEEN :from_date AND :to_date
+            Order by t.town
+    ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+            'town' => $town,
+            'type' => $type,
+        ]);
+        // Return results to the view
+        return view('pages.reports.report5', compact('TATpendingdetail', 'dateS', 'dateE', 'type', 'town'));
+    }
+    public function generate_report6(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $tat_summary_complete = DB::select("
+        SELECT
+            ResolutionDetails,
+            TotalComplaints,
+            CONCAT(
+                ROUND(
+                    (TotalComplaints * 100 /
+                    (SELECT COUNT(*)
+                    FROM complaint c
+                    WHERE c.status = 1
+                    AND c.updated_at IS NOT NULL
+                    AND c.created_at != c.updated_at
+                    )), 2), '%'
+            ) AS Percentage
+        FROM (
+            SELECT
+                CASE
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, c.updated_at) <= 0 THEN 'Complaints solved within TAT (Immediate)'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, c.updated_at) <= 15 THEN 'Complaint Solved within TAT (15 days)'
+                    ELSE 'Complaint Solved out of TAT (after 15 days)'
+                END AS ResolutionDetails,
+                COUNT(*) AS TotalComplaints
+            FROM
+                complaint c
+            WHERE
+                c.status = 1
+                AND c.updated_at IS NOT NULL
+                AND c.created_at != c.updated_at
+                AND c.created_at BETWEEN :from_date AND :to_date
+            GROUP BY
+                ResolutionDetails
+            WITH ROLLUP
+            ) AS subquery
+    ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE
+        ]);
+        return view('pages.reports.report6', compact('tat_summary_complete', 'dateE', 'dateS'));
+    }
+    public function generate_report7(Request $request)
+    {
+
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $tat_summary_pending = DB::select("
+            SELECT
+                CASE
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 0 AND 15 THEN 'Pending since 1-15 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 15 AND 30 THEN 'Pending since 15-30 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 31 AND 60 THEN 'Pending since 31-60 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 61 AND 90 THEN 'Pending since 61-90 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 91 AND 120 THEN 'Pending since 91-120 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) > 120 THEN 'Pending more than 121 days'
+                END AS Pendingdays,
+                COUNT(*) AS TotalPendingComplaints,
+                CONCAT(ROUND(COUNT(*) * 100.0 /
+                    (SELECT COUNT(*) FROM complaint WHERE status = 0), 2), '%') AS Percentage
+            FROM
+                complaint c
+            WHERE
+                c.status = 0 AND c.created_at BETWEEN :from_date AND :to_date
+            GROUP BY
+                Pendingdays WITH ROLLUP
+        ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE
+        ]);
+        return view('pages.reports.report7', compact('tat_summary_pending', 'dateE', 'dateS'));
+    }
+    public function generate_report8(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $type = $request->type_id;
+        $tat_complete_filter = DB::select("
+    SELECT
+        ResolutionDetails,
+        TotalComplaints,
+        CONCAT(
+            ROUND(
+                (TotalComplaints * 100 /
+                (SELECT COUNT(*)
+                FROM complaint c
+                WHERE c.status = 1
+                AND c.updated_at IS NOT NULL
+                AND c.created_at != c.updated_at
+                )), 2), '%'
+        ) AS Percentage
+    FROM (
+        SELECT
+            CASE
+                WHEN TIMESTAMPDIFF(DAY, c.created_at, c.updated_at) <= 0 THEN 'Complaints solved within TAT (Immediate)'
+                WHEN TIMESTAMPDIFF(DAY, c.created_at, c.updated_at) <= 15 THEN 'Complaint Solved within TAT (15 days)'
+                ELSE 'Complaint Solved out of TAT (after 15 days)'
+            END AS ResolutionDetails,
+            COUNT(*) AS TotalComplaints
+        FROM
+            complaint c
+        WHERE
+            c.status = 1
+            AND c.updated_at IS NOT NULL
+            AND c.created_at != c.updated_at
+            AND c.created_at BETWEEN :from_date AND :to_date
+        GROUP BY
+            ResolutionDetails
+        WITH ROLLUP
+        ) AS subquery
+", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+            'type' => $type,
+        ]);
+
+        return view('pages.reports.report8', compact('tat_complete_filter', 'dateE', 'dateS', 'type'));
+    }
+    public function generate_report9(Request $request)
+    {
+
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $type = $request->type_id;
+        $tat_pending_filter = DB::select("
+            SELECT
+                CASE
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 0 AND 15 THEN 'Pending since 1-15 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 15 AND 30 THEN 'Pending since 15-30 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 31 AND 60 THEN 'Pending since 31-60 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 61 AND 90 THEN 'Pending since 61-90 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) BETWEEN 91 AND 120 THEN 'Pending since 91-120 days'
+                    WHEN TIMESTAMPDIFF(DAY, c.created_at, CURRENT_TIMESTAMP) > 120 THEN 'Pending more than 121 days'
+                END AS Pendingdays,
+                COUNT(*) AS TotalPendingComplaints,
+                CONCAT(ROUND(COUNT(*) * 100.0 /
+                    (SELECT COUNT(*) FROM complaint WHERE status = 0), 2), '%') AS Percentage
+            FROM
+                complaint c
+            WHERE
+                c.status = 0 AND c.created_at BETWEEN :from_date AND :to_date AND c.type_id = :type
+            GROUP BY
+                Pendingdays WITH ROLLUP
+        ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+            'type' => $type,
+        ]);
+        return view('pages.reports.report9', compact('tat_pending_filter', 'dateE', 'dateS', 'type'));
+    }
+
+    public function generate_report10(Request $request)
+    {
+
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+
+        $exen_complete = DB::select("
+                SELECT
+                u.name AS Executive_Engineer,
+                st.title AS Department,
+                COUNT(CASE WHEN c.status = 1 THEN 1 END) AS Solved,
+                COUNT(CASE WHEN c.status = 0 THEN 1 END) AS Pending,
+                COUNT(c.id) AS Total_Complaints,
+                ROUND((COUNT(CASE WHEN c.status = 1 THEN 1 END) * 100.0 / COUNT(c.id)), 2) AS Percentage_Solved
+            FROM complaint c
+            JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+            JOIN mobile_agent m ON ca.agent_id = m.id
+            JOIN users u ON m.user_id = u.id
+            JOIN towns t ON c.town_id = t.id
+            JOIN complaint_types st ON c.type_id = st.id
+            where (u.name NOT LIKE 'north agent'
+                AND u.name NOT LIKE 'north nazimabad agent'
+                AND u.name NOT LIKE 'south water'
+                AND u.name NOT LIKE 'Mobile Agent'
+                AND u.name NOT LIKE 'raghib')
+                AND c.created_at BETWEEN :from_date AND :to_date
+            GROUP BY
+                u.name, t.town, st.title
+            ORDER BY
+                Percentage_Solved DESC;
+    ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+        ]);
+        return view('pages.reports.report10', compact('exen_complete', 'dateE', 'dateS'));
+    }
+    public function generate_report11(Request $request)
+    {
+
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $town = $request->town_id;
+        $type = $request->type_id;
+        $exen_complete_filter = DB::select("
+    SELECT
+    u.name AS Executive_Engineer,
+    t.town AS Town,
+    st.title AS Department,
+    COUNT(CASE WHEN c.status = 1 THEN 1 END) AS Solved,
+    COUNT(CASE WHEN c.status = 0 THEN 1 END) AS Pending,
+    COUNT(c.id) AS Total_Complaints,
+    ROUND((COUNT(CASE WHEN c.status = 1 THEN 1 END) * 100.0 / COUNT(c.id)), 2) AS Percentage_Solved
+FROM complaint c
+JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+JOIN mobile_agent m ON ca.agent_id = m.id
+JOIN users u ON m.user_id = u.id
+JOIN towns t ON c.town_id = t.id
+JOIN complaint_types st ON c.type_id = st.id
+where (u.name NOT LIKE 'north agent'
+    AND u.name NOT LIKE 'north nazimabad agent'
+    AND u.name NOT LIKE 'south water'
+    AND u.name NOT LIKE 'Mobile Agent'
+    AND u.name NOT LIKE 'raghib')
+    AND c.created_at BETWEEN :from_date AND :to_date
+    AND c.type_id = :type
+GROUP BY
+    u.name, t.town, st.title
+ORDER BY
+    Percentage_Solved DESC;
+", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+            'type' => $type,
+        ]);
+        return view('pages.reports.report11', compact('exen_complete_filter', 'dateE', 'dateS', 'type'));
+    }
+
+    public function generate_report12(Request $request)
+    {
+
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+        $town = $request->town_id;
+        $exen_complete_filter2 = DB::select("
+    SELECT
+    u.name AS Executive_Engineer,
+    t.town AS Town,
+    st.title AS Department,
+    COUNT(CASE WHEN c.status = 1 THEN 1 END) AS Solved,
+    COUNT(CASE WHEN c.status = 0 THEN 1 END) AS Pending,
+    COUNT(c.id) AS Total_Complaints,
+    ROUND((COUNT(CASE WHEN c.status = 1 THEN 1 END) * 100.0 / COUNT(c.id)), 2) AS Percentage_Solved
+FROM complaint c
+JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+JOIN mobile_agent m ON ca.agent_id = m.id
+JOIN users u ON m.user_id = u.id
+JOIN towns t ON c.town_id = t.id
+JOIN complaint_types st ON c.type_id = st.id
+where (u.name NOT LIKE 'north agent'
+    AND u.name NOT LIKE 'north nazimabad agent'
+    AND u.name NOT LIKE 'south water'
+    AND u.name NOT LIKE 'Mobile Agent'
+    AND u.name NOT LIKE 'raghib')
+    AND c.created_at BETWEEN :from_date AND :to_date
+    AND c.town_id = :town
+GROUP BY
+    u.name, t.town, st.title
+ORDER BY
+    Percentage_Solved DESC;
+", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+            'town' => $town,
+        ]);
+        return view('pages.reports.report12', compact('exen_complete_filter2', 'dateE', 'dateS', 'town'));
+    }
+    public function generate_report13(Request $request)
+    {
+
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $town = $request->town_id ?? null;
+        $subtown = $request->sub_town_id ?? null;
+        $type = $request->type_id ?? null;
+        $subtype = $request->subtype_id ?? null;
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+
+        // Start building the query
+        $query = "
+    SELECT
+        u.name AS Executive_Engineer,
+        t.town AS Town,
+        st.title AS Complaint,
+        COUNT(c.id) AS Total_Complaints,
+        COUNT(CASE WHEN c.status = 1 THEN 1 END) AS Resolved,
+        COUNT(CASE WHEN c.status = 0 THEN 1 END) AS Pending,
+        ROUND((COUNT(CASE WHEN c.status = 1 THEN 1 END) * 100.0 / COUNT(c.id)), 2) AS Percentage_Resolved
+    FROM complaint c
+    LEFT JOIN complaint_assign_agent ca ON ca.complaint_id = c.id
+    JOIN mobile_agent ma ON ma.id = ca.agent_id
+    LEFT JOIN users u ON u.id = ma.user_id
+    JOIN complaint_types ct ON c.type_id = ct.id
+    LEFT JOIN sub_types st ON st.id = c.subtype_id
+    JOIN towns t ON t.id = c.town_id
+    JOIN district d ON t.district_id = d.id
+    LEFT JOIN subtown s ON s.id = c.sub_town_id
+    LEFT JOIN customers c2 ON c2.id = c.customer_id
+    WHERE c.created_at BETWEEN :from_date AND :to_date
+";
+
+        if ($town) {
+            $query .= " AND c.town_id = :town";
+        }
+        if ($subtown) {
+            $query .= " AND c.sub_town_id = :subtown";
+        }
+        if ($type) {
+            $query .= " AND c.type_id = :type";
+        }
+        if ($subtype) {
+            $query .= " AND c.subtype_id = :subtype";
+        }
+
+        // Add the updated GROUP BY and ORDER BY clauses
+        $query .= "
+            GROUP BY u.name, t.town, st.title
+            ORDER BY u.name;
+        ";
+
+        // Prepare the query parameters
+        $params = [
+            'from_date' => $dateS . ' 00:00:00',
+            'to_date' => $dateE . ' 23:59:59',
+        ];
+
+        if ($town) {
+            $params['town'] = $town;
+        }
+        if ($subtown) {
+            $params['subtown'] = $subtown;
+        }
+        if ($type) {
+            $params['type'] = $type;
+        }
+        if ($subtype) {
+            $params['subtype'] = $subtype;
+        }
+
+        // Execute the query
+        $exen_complete_filter2 = DB::select($query, $params);
+        // dd($exen_complete_filter2);
+        return view('pages.reports.report13', compact('exen_complete_filter2', 'dateE', 'dateS', 'town'));
+    }
+
+    public function bounceBackComplaint(Request $request)
+    {
+        try {
+            $request->validate([
+                'complaint_id' => 'required|exists:complaint,id',
+                'reason' => 'required|string|max:500',
+                'type' => 'required|in:department,agent'
+            ]);
+
+            $user = auth('api')->user();
+            $complaint = Complaints::findOrFail($request->complaint_id);
+
+            // Check if user is authorized to bounce back this complaint
+            if ($request->type === 'agent') {
+                $assignedComplaint = ComplaintAssignAgent::where('complaint_id', $request->complaint_id)
+                    ->where('agent_id', $user->agent->id)
+                    ->first();
+
+                if (!$assignedComplaint) {
+                    return response()->json(['error' => 'You are not authorized to bounce back this complaint'], 403);
+                }
+            } else {
+                $assignedComplaint = ComplaintAssignDepartment::where('complaint_id', $request->complaint_id)
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if (!$assignedComplaint) {
+                    return response()->json(['error' => 'You are not authorized to bounce back this complaint'], 403);
+                }
+            }
+
+            // Create bounce back record
+            $bounceBack = BounceBackComplaint::create([
+                'complaint_id' => $request->complaint_id,
+                'type' => $request->type,
+                'agent_id' => $request->type === 'agent' ? $user->agent->id : $user->id,
+                'status' => 'active',
+                'reason' => $request->reason,
+                'bounced_by' => $user->id,
+                'bounced_at' => now()
+            ]);
+
+            // Remove the assignment
+            if ($request->type === 'agent') {
+                ComplaintAssignAgent::where('complaint_id', $request->complaint_id)
+                    ->where('agent_id', $user->agent->id)
+                    ->delete();
+            } else {
+                ComplaintAssignDepartment::where('complaint_id', $request->complaint_id)
+                    ->where('user_id', $user->id)
+                    ->delete();
+            }
+
+            // Log the action
+            LogService::create('Complaint', $complaint->id,
+                $user->name . ' has bounced back the complaint. Reason: ' . $request->reason .
+                ' (Type: ' . ucfirst($request->type) . ')'
+            );
+
+            return response()->json([
+                'success' => 'Complaint bounced back successfully',
+                'data' => $bounceBack
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getBounceBackComplaints(Request $request)
+    {
+        try {
+            $user = auth('api')->user();
+            $type = $request->type ?? 'agent'; // 'agent' or 'department'
+
+            if ($type === 'agent') {
+                $bounceBacks = BounceBackComplaint::with(['complaint.town', 'complaint.customer', 'complaint.type', 'complaint.subtype', 'complaint.prio'])
+                    ->where('type', 'agent')
+                    ->where('agent_id', $user->agent->id)
+                    ->where('status', 'active')
+                    ->get();
+            } else {
+                $bounceBacks = BounceBackComplaint::with(['complaint.town', 'customer', 'complaint.type', 'complaint.subtype', 'complaint.prio'])
+                    ->where('type', 'department')
+                    ->where('agent_id', $user->id)
+                    ->where('status', 'active')
+                    ->get();
+            }
+
+            // Log the action
+            LogService::create('Complaint', 0,
+                $user->name . ' viewed bounce back complaints list (Type: ' . ucfirst($type) . ')'
+            );
+
+            return response()->json([
+                'success' => true,
+                'data' => $bounceBacks
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function logs($complaintId)
+    {
+        // try {
+            $complaint = Complaints::with([
+                'town',
+                'subtown',
+                'customer',
+                'type',
+                'subtype',
+                'prio',
+                'assignedComplaints.agents.user',
+                'assignedComplaintsDepartment.user'
+            ])->findOrFail($complaintId);
+
+            // Get all logs for this complaint
+            $logs = logs::where('action', 'Complaint')
+                ->where('action_id', $complaintId)
+                ->with('user')
+                ->orderBy('created_at', 'asc')
+                ->get();
+            // dd($logs->toArray());
+            // Get bounce back records for this complaint
+            $bounceBacks = BounceBackComplaint::with([
+                'mobileAgent.user',
+                'departmentUser',
+                'bouncedByUser'
+            ])->where('complaint_id', $complaintId)
+              ->orderBy('bounced_at', 'desc')
+              ->get();
+
+            // Add bounce back logs to the main logs array
+            foreach ($bounceBacks as $bounceBack) {
+                $logs->push((object) [
+                    'log_type' => 'BounceBack',
+                    'description' => "Complaint bounced back by " . ($bounceBack->bouncedByUser ? $bounceBack->bouncedByUser->name : 'Unknown User') .
+                                   ". Reason: " . $bounceBack->reason . " (Type: " . ucfirst($bounceBack->type) . ")",
+                    'created_at' => $bounceBack->bounced_at,
+                    'user' => $bounceBack->bouncedByUser
+                ]);
+            }
+
+            // Sort all logs by creation date
+            $logs = $logs->sortBy('created_at')->values();
+
+            return view('pages.complaints.logs', compact('complaint', 'logs', 'bounceBacks'));
+
+        // } catch (Exception $e) {
+        //     return redirect()->back()->with('error', 'Complaint not found or error occurred.');
+        // }
+    }
+    public function generate_report14(Request $request)
+    {
+        $request->validate([
+            'from_date' => 'required|date',
+            'to_date' => 'required|date',
+        ]);
+
+        $dateS = $request->from_date;
+        $dateE = $request->to_date;
+
+        // SQL query to fetch data with parameter binding
+        $Subtypesummary = DB::select("
+        select
+                st.title AS Department ,
+                SUM(
+                    CASE
+                        WHEN c.status = 1
+                        AND c.updated_at IS NOT NULL
+                        AND c.created_at != c.updated_at
+                        THEN 1 ELSE 0
+                    END
+                )
+                +
+                SUM(
+                    CASE
+                        WHEN c.status = 0
+                        THEN 1 ELSE 0
+                    END
+                ) AS Total_Complaints,
+                SUM(CASE
+                    WHEN c.status = 1
+                    AND c.updated_at IS NOT NULL
+                    AND c.created_at != c.updated_at
+                    THEN 1 ELSE 0
+                END) AS Solved,
+                SUM(CASE
+                    WHEN c.status = 0
+                    THEN 1 ELSE 0
+                END) AS Pending
+                from complaint c
+                left JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+            left JOIN mobile_agent m ON ca.agent_id = m.id
+            left JOIN users u ON m.user_id = u.id
+            JOIN complaint_types st ON c.type_id = st.id
+            where  c.created_at BETWEEN :from_date AND :to_date
+            GROUP BY c.type_id,st.title;
+    ", [
+            'from_date' => $dateS,
+            'to_date' => $dateE,
+        ]);
+        // Return results to the view
+        return view('pages.reports.report14', compact('Subtypesummary', 'dateS', 'dateE'));
+    }
+
+    public function generate_report15(Request $request)
+        {
+            $request->validate([
+                'from_date' => 'required|date',
+                'to_date' => 'required|date',
+            ]);
+
+            $town = $request->town_id ?? null;
+            $subtown = $request->sub_town_id ?? null;
+            $type = $request->type_id ?? null;
+            $subtype = $request->subtype_id ?? null;
+            $source = $request->source ?? null;
+            $executive_engineer = $request->executive_engineer ?? null;
+            $department = $request->department ?? null;
+
+            $dateS = $request->from_date;
+            $dateE = $request->to_date;
+
+            // Start building the query with correct column names
+            $query = "
+            SELECT
+                c.comp_num,
+                ct.title as complain_type,
+                st.title as sub_type,
+                p.title as priority,
+                t.town,
+                st2.title as sub_town,
+                c.customer_num as consumer_number,
+                c.customer_cnic,
+                c.description as customer_desc,
+                c.customer_name,
+                c.phone,
+                c.email,
+                c.address,
+                c.source,
+                c.agent_description,
+                c.created_at,
+                c.updated_at,
+                CASE WHEN c.status = 1 THEN 'Solved' ELSE 'Pending' END AS status,
+                u.name as executive_engineer,
+                d.name as department_name
+            FROM complaint c
+            LEFT JOIN complaint_types ct ON ct.id = c.type_id
+            LEFT JOIN sub_types st ON st.id = c.subtype_id
+            LEFT JOIN priorities p ON p.id = c.prio_id
+            LEFT JOIN towns t ON t.id = c.town_id
+            LEFT JOIN subtown st2 ON st2.id = c.sub_town_id
+            LEFT JOIN complaint_assign_agent ca ON c.id = ca.complaint_id
+            LEFT JOIN mobile_agent ma ON ma.id = ca.agent_id
+            LEFT JOIN users u ON u.id = ma.user_id
+            LEFT JOIN department d ON d.id = u.department_id
+            WHERE c.created_at BETWEEN :from_date AND :to_date
+            ";
+
+            if ($town) {
+                $query .= " AND c.town_id = :town";
+            }
+            if ($subtown) {
+                $query .= " AND c.sub_town_id = :subtown";
+            }
+            if ($type) {
+                $query .= " AND c.type_id = :type";
+            }
+            if ($subtype) {
+                $query .= " AND c.subtype_id = :subtype";
+            }
+            if ($source && $source !== 'all') {
+                $query .= " AND c.source = :source";
+            }
+            if ($executive_engineer) {
+                $query .= " AND u.id = :executive_engineer";
+            }
+            if ($department) {
+                $query .= " AND u.department_id = :department";
+            }
+
+            $query .= " ORDER BY c.created_at DESC";
+
+            // Prepare the query parameters
+            $params = [
+                'from_date' => $dateS . ' 00:00:00',
+                'to_date' => $dateE . ' 23:59:59',
+            ];
+
+            if ($town) {
+                $params['town'] = $town;
+            }
+            if ($subtown) {
+                $params['subtown'] = $subtown;
+            }
+            if ($type) {
+                $params['type'] = $type;
+            }
+            if ($subtype) {
+                $params['subtype'] = $subtype;
+            }
+            if ($source && $source !== 'all') {
+                $params['source'] = $source;
+            }
+            if ($executive_engineer) {
+                $params['executive_engineer'] = $executive_engineer;
+            }
+            if ($department) {
+                $params['department'] = $department;
+            }
+
+            // Execute the query
+            $detailed_report = DB::select($query, $params);
+
+            // Get filter data for the form
+            $towns = Town::orderBy('town', 'asc')->get();
+            $subtowns = SubTown::orderBy('title', 'asc')->get();
+            $types = ComplaintType::orderBy('title', 'asc')->get();
+            $subtypes = SubType::orderBy('title', 'asc')->get();
+            $sources = Source::orderBy('title', 'asc')->get();
+            $executive_engineers = User::where('role', 3)->orderBy('name', 'asc')->get();
+            $departments = Department::orderBy('name', 'asc')->get();
+
+            return view('pages.reports.report15', compact(
+                'detailed_report',
+                'dateE',
+                'dateS',
+                'towns',
+                'subtowns',
+                'types',
+                'subtypes',
+                'sources',
+                'executive_engineers',
+                'departments',
+                'town',
+                'subtown',
+                'type',
+                'subtype',
+                'source',
+                'executive_engineer',
+                'department'
+            ));
+        }
+
+    public function generate_billing_data(Request $request)
+        {
+            $request->validate([
+                'consumer_no' => 'required|string',
+            ]);
+
+            $consumer_no = $request->consumer_no;
+            $username = 'websiteapikw@sc';
+            $password = 'kW@$c!%23$%26';
+
+            $response = Http::get('https://kwsconline.com:5000/api/BankCollection/GetConsumerBillDetails', [
+                'consumer_no' => $consumer_no,
+                'username' => $username,
+                'password' => $password
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if ($data['status'] === 'Success' && isset($data['retailBillPrintingComplete'])) {
+                    $bill = $data['retailBillPrintingComplete'];
+
+                    // Extract important info
+                    $consumer = [
+                        'consumer_no'   => $bill['conS_NO'] ?? '',
+                        'name'          => $bill['consumeR_NAME'] ?? '',
+                        'town'          => $bill['towN_NAME'] ?? '',
+                        'address'       => trim(($bill['adD1'] ?? '') . ' ' . ($bill['adD2'] ?? '')),
+                        'bill_period'   => $bill['bilL_PERIOD'] ?? '',
+                        'issue_date'    => $bill['issU_DT'] ?? '',
+                        'due_date'      => $bill['duE_DT'] ?? '',
+                        'payable'       => $bill['payablE_DUE_DATE'] ?? 0,
+                        'after_due'     => $bill['payablE_AFTER_DATE'] ?? 0,
+                    ];
+
+                    // Get current and last month
+                    $current_month = [
+                        'month' => $bill['bilL_PERIOD'] ?? '',
+                        'billed' => $bill['wateR_CURRENT'] ?? 0,
+                        'paid' => $bill['amounT_PAID_12'] ?? 0, // latest entry in history
+                        'status' => ($bill['payablE_DUE_DATE'] ?? 0) > 0 ? 'Unpaid' : 'Paid'
+                    ];
+
+                    $last_month = [
+                        'month' => $bill['billinG_MONTH_1'] ?? '',
+                        'billed' => $bill['amounT_BILLED_1'] ?? 0,
+                        'paid' => $bill['amounT_PAID_1'] ?? 0,
+                        'date' => $bill['paymenT_DATE_1'] ?? '',
+                    ];
+
+                    return view('pages.reports.report16', compact('consumer', 'current_month', 'last_month'));
+                }
+            }
+
+            return view('pages.reports.report16')->withErrors(['error' => 'Unable to fetch billing data']);
+        }
+
+    public function getConsumerDetails(Request $request)
+    {
+        $request->validate([
+            'consumer_no' => 'required|string',
+        ]);
+
+        $consumer_no = $request->consumer_no;
+        $username = 'websiteapikw@sc';
+        $password = 'kW@$c!%23$%26';
+
+        $response = Http::get('https://kwsconline.com:5000/api/BankCollection/GetConsumerBillDetails', [
+            'consumer_no' => $consumer_no,
+            'username' => $username,
+            'password' => $password
+        ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+
+            if ($data['status'] === 'Success' && isset($data['retailBillPrintingComplete'])) {
+                $bill = $data['retailBillPrintingComplete'];
+
+                $consumer = [
+                    'consumer_no'   => $bill['conS_NO'] ?? '',
+                    'name'          => $bill['consumeR_NAME'] ?? '',
+                    'address'       => trim(($bill['adD1'] ?? '') . ' ' . ($bill['adD2'] ?? '')),
+                    'bill_period'   => $bill['bilL_PERIOD'] ?? '',
+                    'issue_date'    => $bill['issU_DT'] ?? '',
+                    'due_date'      => $bill['duE_DT'] ?? '',
+                    'payable'       => $bill['payablE_DUE_DATE'] ?? 0,
+                    'after_due'     => $bill['payablE_AFTER_DATE'] ?? 0,
+                    'water_current' => $bill['wateR_CURRENT'] ?? 0,
+                    'water_surcharge' => $bill['wateR_SURCHARGE'] ?? 0,
+                    'water_arrear' => $bill['wateR_ARREAR'] ?? 0,
+                    'sewerage_current' => $bill['seweragE_CURRENT'] ?? 0,
+                    'sewerage_arrear' => $bill['sewwragE_ARREAR'] ?? 0,
+                    'conservancy_current' => $bill['conservancY_CURRENT'] ?? 0,
+                    'conservancy_arrear' => $bill['conservancY_ARREAR'] ?? 0,
+                    'fire_current' => $bill['firE_CURRENT'] ?? 0,
+                    'fire_arrear' => $bill['firE_ARREAR'] ?? 0,
+                    'total_water' => $bill['totaL_WATER'] ?? 0,
+                    'total_sewerage' => $bill['totaL_SEWERAGE'] ?? 0,
+                    'total_conservancy' => $bill['totaL_CONSERVANCY'] ?? 0,
+                    'total_fire' => $bill['totaL_FIRE'] ?? 0,
+                    'bank_charges' => $bill['banK_CHARGES'] ?? 0,
+                    'plot_size' => $bill['ploT_SIZE'] ?? 0,
+                    'flat_size' => $bill['flaT_SIZE'] ?? 0,
+                    'zone_name' => $bill['zonE_NAME'] ?? '',
+                    'last_month_billed' => $bill['amounT_BILLED_12'] ?? 0,
+                    'last_month_paid' => $bill['amounT_PAID_12'] ?? 0,
+                    'last_month_date' => $bill['paymenT_DATE_12'] ?? '',
+                ];
+
+                // Determine current month status from first API data
+                $currentAmountDue = $consumer['payable'] ?? 0;
+                if ($currentAmountDue > 0) {
+                    $consumer['current_month_status'] = 'Unpaid';
+                    $consumer['current_month_amount'] = $currentAmountDue;
+                    $consumer['current_month_surcharge'] = $consumer['after_due'] - $currentAmountDue;
+                } else {
+                    $consumer['current_month_status'] = 'Paid';
+                }
+
+                // Optional: Try to get additional data from second API as backup
+                $billResponse = Http::get('https://kwsconline.com:5000/api/BankCollection/GetConsumerBill', [
+                    'consumer_no' => $consumer_no,
+                    'username' => $username,
+                    'password' => $password
+                ]);
+
+                if ($billResponse->successful()) {
+                    $billData = $billResponse->json();
+                    if ($billData['status'] === 'Success' && isset($billData['data']) && count($billData['data']) > 0) {
+                        $currentBill = $billData['data'][0];
+                        // Override with API data if available
+                        $consumer['current_month_status'] = $currentBill['billStatus'] ?? $consumer['current_month_status'];
+                        $consumer['current_month_due_date'] = $currentBill['dueDate'] ?? '';
+                        $consumer['current_month_amount'] = $currentBill['amountBeforeDueDate'] ?? $consumer['current_month_amount'];
+                        $consumer['current_month_surcharge'] = $currentBill['surcharge'] ?? $consumer['current_month_surcharge'];
+                    }
+                }
+
+                return response()->json(['status' => 'success', 'consumer' => $consumer]);
+            }
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Unable to fetch consumer details']);
+    }
+
+}
