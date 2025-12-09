@@ -88,20 +88,20 @@
                                                     CNIC</label>
                                                 <input type="text"
                                                     class="form-control border rounded-3 px-3 py-2 bg-light" value=""
-                                                    id="display_consumer_no" />
+                                                    id="display_consumer_no" disabled />
                                             </div>
                                             <div class="form-group mb-3">
                                                 <label class="form-control-label text-dark font-weight-bold">Customer
                                                     Name</label>
                                                 <input type="text"
                                                     class="form-control border rounded-3 px-3 py-2 bg-light" value=""
-                                                    id="display_consumer_name" />
+                                                    id="display_consumer_name" disabled />
                                             </div>
                                             <div class="form-group mb-3">
                                                 <label class="form-control-label text-dark font-weight-bold">Address</label>
                                                 <input type="text"
                                                     class="form-control border rounded-3 px-3 py-2 bg-light" value=""
-                                                    id="display_address" />
+                                                    id="display_address" disabled />
                                             </div>
                                             {{-- <div class="form-group mb-0">
                                                 <label class="form-control-label text-dark font-weight-bold">Zone</label>
