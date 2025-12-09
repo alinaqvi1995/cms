@@ -14,7 +14,8 @@
             </g>
         </svg> --}}
     </a>
-    <h1 class="h2 mb-3">COMPLAINT REDRESSAL MANAGEMENT SYSTEM </h1>
+    <!-- <h1 class="h2 mb-3">COMPLAINT REDRESSAL MANAGEMENT SYSTEM </h1> -->
+    <h1 class="h2 mb-3">LOGIN </h1>
     <div class="form-group">
         <label for="inputEmail" class="sr-only">Email address</label>
         <input type="email" id="inputEmail" class="form-control form-control-lg @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" placeholder="Email address" required autofocus>

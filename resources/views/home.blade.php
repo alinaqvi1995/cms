@@ -181,7 +181,7 @@
                                 </div>
                                 
                                 <div class="col-xl-12 col-sm-14 text-end mt-3">
-                                    <a class="btn btn-primary btn-lg shadow-sm" href="{{-- {{ route('compaints-management.create') }} --}}"
+                                    <a class="btn btn-primary btn-lg shadow-sm" href="{{ route('compaints-management.create') }}"
                                         target="_blank">
                                         <i class="fas fa-plus me-2"></i>
                                         Add New Complaint
