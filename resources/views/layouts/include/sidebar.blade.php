@@ -61,7 +61,7 @@
                 </ul>
             </li>
         </ul>
-        {{-- <p class="text-muted nav-heading mt-4 mb-2 pl-4">
+        <p class="text-muted nav-heading mt-4 mb-2 pl-4">
             <span>Components</span>
         </p>
         <ul class="navbar-nav flex-fill w-100 mb-2">
@@ -87,7 +87,8 @@
                     @endcan
                     @can('departments.index')
                         <li class="nav-item @if (Route::is('departments.index')) active @endif">
-                            <a class="nav-link" href="{{ url('admin/departments') }}"><span class="ml-1 item-text">Department
+                            <a class="nav-link" href="{{ url('admin/departments') }}"><span
+                                    class="ml-1 item-text">Department
                                     Management</span>
                             </a>
                         </li>
@@ -113,16 +114,16 @@
                             </a>
                         </li>
                     @endcan
-                    @can('districts.index')
+                    {{-- @can('districts.index')
                         <li class="nav-item @if (Route::is('districts.index')) active @endif">
                             <a class="nav-link" href="{{ url('admin/districts') }}"><span class="ml-1 item-text">District
                                     Management</span>
                             </a>
                         </li>
-                    @endcan
+                    @endcan --}}
                 </ul>
             </li>
-            <li class="nav-item dropdown">
+            {{-- <li class="nav-item dropdown">
                 <a href="#forms" data-toggle="collapse" aria-expanded="true" class="dropdown-toggle nav-link">
                     <i class="fe fe-layers fe-16"></i>
                     <span class="ml-3 item-text">Agents & Others</span>
@@ -152,7 +153,7 @@
                     @endcan
 
                 </ul>
-            </li>
+            </li> --}}
             <li class="nav-item dropdown">
                 <a href="#tables" data-toggle="collapse" aria-expanded="true" class="dropdown-toggle nav-link">
                     <i class="fe fe-grid fe-16"></i>
@@ -165,36 +166,36 @@
                                     class="ml-1 item-text">Complaints</span>
                             </a>
                         </li>
-                        <li class="nav-item @if (Route::is('compaints-management.index') && request()->get('comp_type_id')) active @endif">
+                        {{-- <li class="nav-item @if (Route::is('compaints-management.index') && request()->get('comp_type_id')) active @endif">
                             <a class="nav-link" href="{{ url('admin/compaints-management') }}?comp_type_id[]=1&comp_type_id[]=2&comp_type_id[]=5"><span
                                     class="ml-1 item-text">Requests</span>
                             </a>
-                        </li>
+                        </li> --}}
                     @endcan
                     @can('compaints-type-management.index')
                         <li class="nav-item @if (Route::is('compaints-type-management.index')) active @endif">
                             <a class="nav-link" href="{{ url('admin/compaints-type-management') }}"><span
-                                    class="ml-1 item-text">CT Management</span>
+                                    class="ml-1 item-text">Complaint Types</span>
                             </a>
                         </li>
                     @endcan
                     @can('subtype-management.index')
                         <li class="nav-item @if (Route::is('subtype-management.index')) active @endif">
                             <a class="nav-link" href="{{ url('admin/subtype-management') }}"><span
-                                    class="ml-1 item-text">SubType</span>
+                                    class="ml-1 item-text">Complaint SubType</span>
                             </a>
                         </li>
                     @endcan
-                    @can('bounce-back.index')
+                    {{-- @can('bounce-back.index')
                     <li class="nav-item @if (Route::is('bounce-back.index')) active @endif">
                         <a class="nav-link" href="{{ route('bounce-back.index') }}"><span
                                 class="ml-1 item-text">Bounce Back Complaints</span>
                         </a>
                     </li>
-                    @endcan
+                    @endcan --}}
                 </ul>
             </li>
-        </ul> --}}
+        </ul>
     </nav>
 </aside>
 
